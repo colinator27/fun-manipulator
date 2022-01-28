@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunManipulator", "FunManipulator\FunManipulator.csproj", "{91836281-C81C-4DC8-9540-7CF47BA68428}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91836281-C81C-4DC8-9540-7CF47BA68428}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91836281-C81C-4DC8-9540-7CF47BA68428}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91836281-C81C-4DC8-9540-7CF47BA68428}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91836281-C81C-4DC8-9540-7CF47BA68428}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7F5B5368-A0AC-479E-A8BE-4B15E0BF9107}
+	EndGlobalSection
+EndGlobal

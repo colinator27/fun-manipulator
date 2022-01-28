@@ -1,0 +1,15 @@
+{
+  "RNG15Bit": true,
+  "RNGOldPoly": false,
+
+  "ForceFunMinimum": -1,
+  "ForceFunMaximum": -1,
+
+  "FunSearchRange": 5400,
+  "FunSearchOffset": 0,
+
+  "BeepFilename": "beep.wav",
+  "BeepFrameOffset": -4,
+  "BeepCount": 5,
+  "BeepInterval": 0.3
+}
