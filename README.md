@@ -10,6 +10,8 @@ It will then wait for you to press spacebar. This is intended for use with Alt+S
 The purpose of pausing is to locate the random shake positions of the first three rows of letters on the naming screen.
 Ideally, you would use an overlay image, such as through a program like OBS, to do this for you. One such image is provided in this repository (`naming overlay.png`).
 
+One caveat in order for this to work efficiently is that you need to get letter positions relatively quickly (within a 1-2 loops of the menu theme or so). If you wait too long while RNG is being called, the RNG seed will likely not be found.
+
 As for the specific technique, this is what the default configuration (editable inside of `config.json`) is currently designed for:
 - Press Z+Alt+Space together.
 - Repeatedly press Alt+Space until the screen changes to the Yes/No selection screen, while in a program like OBS, the preview shows the previous frame.
