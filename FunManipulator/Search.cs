@@ -4,10 +4,10 @@ namespace FunManipulator;
 
 public static class Search
 {
-    public static int Parallelism { get; set; } = Environment.ProcessorCount;
+    public static int Parallelism { get; set; } = Math.Min(16, Environment.ProcessorCount);
 
     /// <summary>
-    /// Attempts to find a seed where a specific pattern of RNG exists, within a search range.
+    /// Attempts to find a seed where a specific boolean/ranged pattern of RNG exists, within a search range.
     /// Will fail if more than one possible seed is found.
     /// </summary>
     /// <param name="pattern">Array representing known RNG calls that are within the desired range (true for within)</param>
@@ -192,5 +192,58 @@ public static class Search
 
         // Unsuccessful
         return -1;
+    }
+
+    /// <summary>
+    /// Attempts to find a boolean/ranged pattern of RNG within a seed.
+    /// Bytes 0 are not within range, 1 are within range, 2 are unknown.
+    /// </summary>
+    /// <param name="seed">RNG seed to use.</param>
+    /// <param name="pattern">Array representing known RNG calls that are within the desired range (true for within)</param>
+    /// <param name="offset">Location in RNG sequence to begin the search</param>
+    /// <param name="searchSize">Number of RNG values to advance in the sequence before aborting</param>
+    /// <param name="minInclusive">Lowest value that is within desired range</param>
+    /// <param name="maxExclusive">Above highest value that is within desired range</param>
+    /// <param name="resultIndex">The index within the RNG sequence where the pattern starts</param>
+    /// <returns>True if successful, false otherwise.</returns>
+    public static bool TryFindPattern(uint seed, byte[] pattern, int offset, int searchSize, long minInclusive, long maxExclusive, out int resultIndex)
+    {
+        bool[] simulated = new bool[searchSize];
+        RNG rng = new(seed);
+
+        // Advance to the starting location
+        for (int i = 0; i < offset; i++)
+            rng.Next();
+
+        // Now simulate the results we want
+        for (int i = 0; i < searchSize; i++)
+        {
+            uint val = rng.Next();
+            simulated[i] = (val >= minInclusive && val < maxExclusive);
+        }
+
+        // Search the simulated results for our pattern
+        int patternPos = 0;
+        for (int i = 0; i < searchSize; i++)
+        {
+            if (pattern[patternPos] == 2 || pattern[patternPos] == (simulated[i] ? 1 : 0))
+            {
+                patternPos++;
+                if (patternPos >= pattern.Length)
+                {
+                    resultIndex = (i + 1) - patternPos;
+                    return true;
+                }
+            }
+            else
+            {
+                // Pattern order not matched, reset to after the first element to continue scanning
+                i -= patternPos;
+                patternPos = 0;
+            }
+        }
+
+        resultIndex = -1;
+        return false;
     }
 }

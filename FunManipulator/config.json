@@ -2,14 +2,22 @@
   "RNG15Bit": true,
   "RNGOldPoly": false,
 
-  "ForceFunMinimum": -1,
-  "ForceFunMaximum": -1,
+  "FunManip": {
+    "ForceFunMinimum": -1,
+    "ForceFunMaximum": -1,
 
-  "FunSearchRange": 5400,
-  "FunSearchOffset": 0,
+    "FunSearchRange": 5400,
+    "FunSearchOffset": 0
+  },
+  "SeedFinder": {
+    "Seed": -1,
+    "SearchRange": 10000000
+  },
 
   "BeepFilename": "beep.wav",
   "BeepFrameOffset": -4,
   "BeepCount": 5,
-  "BeepInterval": 0.3
+  "BeepInterval": 0.3,
+
+  "Program": "FunManip"
 }

@@ -22,5 +22,11 @@ namespace FunManipulator
             Start = (Config.Instance.BeepCount - 1) * Config.Instance.BeepInterval;
             sound.Dispose();
         }
+
+        public static void Cleanup()
+        {
+            Sound.Dispose();
+            Buffer.Dispose();
+        }
     }
 }
