@@ -4,21 +4,333 @@ namespace FunManipulator;
 
 public static class Search
 {
+    public class Pattern
+    {
+        public List<IElement> Elements { get; init; }
+        public bool AnyOrder { get; set; } = false;
+        public int AllowedErrors { get; set; } = 0;
+
+        private Stack<List<IElement>>? _stack = null;
+
+        public Pattern()
+        {
+            Elements = new List<IElement>();
+        }
+
+        public int GetSize()
+        {
+            int size = 0;
+            foreach (var elem in Elements)
+                size += elem.GetSize();
+            return size;
+        }
+
+        public int CheckFirst(uint[] rng, int startIndex, int endIndexExclusive)
+        {
+            if (AnyOrder)
+            {
+                // TODO: Might want to reimplement Check() to avoid the List allocation, but fine for now
+                List<int> list = Check(rng, startIndex, endIndexExclusive);
+                if (list.Count == 0)
+                    return -1;
+                return list[0];
+            }
+            else
+            {
+                // Search through all of the RNG array, looking for the pattern in the correct order
+                int size = GetSize();
+                for (int i = startIndex; i <= endIndexExclusive - size; i++)
+                {
+                    int errors = 0;
+                    int currIndex = i;
+                    foreach (var elem in Elements)
+                    {
+                        if (!elem.Check(rng, ref currIndex))
+                        {
+                            if (++errors > AllowedErrors)
+                                break;
+                        }
+                    }
+                    if (errors <= AllowedErrors)
+                        return i;
+                }
+                return -1;
+            }
+        }
+
+        public List<int> Check(uint[] rng, int startIndex, int endIndexExclusive)
+        {
+            List<int> results = new();
+            if (AnyOrder)
+            {
+                _stack ??= new();
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // Search through all of the RNG array, looking for the pattern in the correct order
+                int size = GetSize();
+                for (int i = startIndex; i <= endIndexExclusive - size; i++)
+                {
+                    int errors = 0;
+                    int currIndex = i;
+                    foreach (var elem in Elements)
+                    {
+                        if (!elem.Check(rng, ref currIndex))
+                        {
+                            if (++errors > AllowedErrors)
+                                break;
+                        }
+                    }
+                    if (errors <= AllowedErrors)
+                        results.Add(i);
+                }
+            }
+            return results;
+        }
+    }
+
+    public enum ElementKind
+    {
+        Unknown,
+        RandomInRange,
+        RandomRangeInRange,
+        IRandomInRange,
+        IRandomRangeInRange,
+        ChooseIndex,
+        GreaterThanPrevious,
+        LesserThanPrevious
+    }
+
+    public interface IElement
+    {
+        public ElementKind Kind { get; init; }
+        public int GetSize();
+
+        public bool Check(uint[] rng, ref int index);
+    }
+
+    public class ElementUnknown : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.Unknown;
+        public int GetSize() => (IsIRandom ? 2 : 1);
+
+        public bool IsIRandom { get; init; }
+
+        public ElementUnknown(bool isIRandom)
+        {
+            IsIRandom = isIRandom;
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            index += (IsIRandom ? 2 : 1);
+            return true;
+        }
+    }
+
+    public class ElementRandomInRange : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.RandomInRange;
+        public int GetSize() => 1;
+        public long MinInclusive { get; init; }
+        public long MaxExclusive { get; init; }
+        public bool Inverted { get; set; } = false;
+
+        public ElementRandomInRange(long minInclusive, long maxExclusive)
+        {
+            MinInclusive = minInclusive;
+            MaxExclusive = maxExclusive;
+        }
+
+        public ElementRandomInRange(double range, double minInclusive, double maxExclusive)
+        {
+            (MinInclusive, MaxExclusive) = RNG.GetRange(range, minInclusive, maxExclusive);
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            uint curr = rng[index++];
+            if (Inverted)
+                return curr < MinInclusive || curr >= MaxExclusive;
+            return curr >= MinInclusive && curr < MaxExclusive;
+        }
+    }
+
+    public class ElementIRandomInRange : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.IRandomInRange;
+        public int GetSize() => 2;
+        public long Range { get; init; }
+        public long MinInclusive { get; init; }
+        public long MaxExclusive { get; init; }
+        public bool Inverted { get; set; } = false;
+
+        public ElementIRandomInRange(long range, long minInclusive, long maxExclusive)
+        {
+            Range = range;
+            MinInclusive = minInclusive;
+            MaxExclusive = maxExclusive;
+        }
+
+        public ElementIRandomInRange(long range, long exact)
+        {
+            Range = range;
+            MinInclusive = exact;
+            MaxExclusive = exact + 1;
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            long a = rng[index++];
+            if (index >= rng.Length)
+                return false;
+            long b = rng[index++];
+            long curr = ((b << 32) | a) % (Range + 1);
+            if (Inverted)
+                return curr < MinInclusive || curr >= MaxExclusive;
+            return curr >= MinInclusive && curr < MaxExclusive;
+        }
+    }
+
+    public class ElementRandomRangeInRange : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.RandomRangeInRange;
+        public int GetSize() => 1;
+        public long MinInclusive { get; init; }
+        public long MaxExclusive { get; init; }
+        public bool Inverted { get; set; } = false;
+
+        public ElementRandomRangeInRange(double rangeStart, double rangeEnd, double minInclusive, double maxExclusive)
+        {
+            if (rangeEnd < rangeStart)
+            {
+                double temp = rangeEnd;
+                rangeEnd = rangeStart;
+                rangeStart = temp;
+            }
+            (MinInclusive, MaxExclusive) = RNG.GetRange(rangeEnd - rangeStart, minInclusive - rangeStart, maxExclusive - rangeStart);
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            uint curr = rng[index++];
+            if (Inverted)
+                return curr < MinInclusive || curr >= MaxExclusive;
+            return curr >= MinInclusive && curr < MaxExclusive;
+        }
+    }
+
+    public class ElementIRandomRangeInRange : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.IRandomInRange;
+        public int GetSize() => 2;
+        public long Range { get; init; }
+        public long MinInclusive { get; init; }
+        public long MaxExclusive { get; init; }
+        public bool Inverted { get; set; } = false;
+
+        public ElementIRandomRangeInRange(long rangeStart, long rangeEnd, long minInclusive, long maxExclusive)
+        {
+            if (rangeEnd < rangeStart)
+            {
+                long temp = rangeEnd;
+                rangeEnd = rangeStart;
+                rangeStart = temp;
+            }
+            Range = rangeEnd - rangeStart;
+            MinInclusive = minInclusive - rangeStart;
+            MaxExclusive = maxExclusive - rangeStart;
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            long a = rng[index++];
+            long b = rng[index++];
+            long curr = ((b << 32) | a) % (Range + 1);
+            if (Inverted)
+                return curr < MinInclusive || curr >= MaxExclusive;
+            return curr >= MinInclusive && curr < MaxExclusive;
+        }
+    }
+
+    public class ElementChooseIndex : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.ChooseIndex;
+        public int GetSize() => 1;
+        public int ArgCount { get; init; }
+        public int MinInclusive { get; init; }
+        public int MaxExclusive { get; init; }
+        public bool Inverted { get; set; } = false;
+
+        public ElementChooseIndex(int argCount, int minInclusive, int maxExclusive)
+        {
+            ArgCount = argCount;
+            MinInclusive = minInclusive;
+            MaxExclusive = maxExclusive;
+        }
+
+        public ElementChooseIndex(int argCount, int exact)
+        {
+            ArgCount = argCount;
+            MinInclusive = exact;
+            MaxExclusive = exact + 1;
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            long curr = rng[index++] % (ArgCount + 1);
+            if (Inverted)
+                return curr < MinInclusive || curr >= MaxExclusive;
+            return curr >= MinInclusive && curr < MaxExclusive;
+        }
+    }
+
+    // Note: only works for random()
+    public class ElementGreaterThanPrevious : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.GreaterThanPrevious;
+        public int GetSize() => 1;
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            if (index == 0)
+                return true; // Can't be greater than nothing, so just assume it's true
+            bool isGreater = rng[index] > rng[index - 1];
+            index++;
+            return isGreater;
+        }
+    }
+
+    // Note: only works for random()
+    public class ElementLesserThanPrevious : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.LesserThanPrevious;
+        public int GetSize() => 1;
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            if (index == 0)
+                return true; // Can't be lesser than nothing, so just assume it's true
+            bool isLesser = rng[index] < rng[index - 1];
+            index++;
+            return isLesser;
+        }
+    }
+
     public static int Parallelism { get; set; } = Math.Min(16, Environment.ProcessorCount);
 
     /// <summary>
     /// Attempts to find a seed where a specific boolean/ranged pattern of RNG exists, within a search range.
     /// Will fail if more than one possible seed is found.
     /// </summary>
-    /// <param name="pattern">Array representing known RNG calls that are within the desired range (true for within)</param>
+    /// <param name="pattern">Known RNG pattern that is within the desired range</param>
     /// <param name="offset">Location in RNG sequence to begin the search</param>
     /// <param name="searchSize">Number of RNG values to advance in the sequence before aborting</param>
-    /// <param name="minInclusive">Lowest value that is within desired range</param>
-    /// <param name="maxExclusive">Above highest value that is within desired range</param>
     /// <param name="resultSeed">The seed that was found, if successful</param>
     /// <param name="resultIndex">The index within the RNG sequence where the pattern starts</param>
     /// <returns>True if successful, false otherwise.</returns>
-    public static bool TryFindSeedWithinRange(bool[] pattern, int offset, int searchSize, long minInclusive, long maxExclusive, out uint resultSeed, out int resultIndex)
+    public static bool TryFindSeedWithinRange(Pattern pattern, int offset, int searchSize, out uint resultSeed, out int resultIndex)
     {
         uint localResultSeed = 0;
         int localResultIndex = 0;
@@ -27,11 +339,11 @@ public static class Search
 
         // Split the work of all the seeds into separate threads
         // Do it in chunks to reduce large memory allocations
-        var rangePartitioner = Partitioner.Create(0, RNG.UniqueSeeds.Length);
+        var rangePartitioner = Partitioner.Create(0, RNG.UniqueSeeds?.Length ?? throw new Exception("RNG not initialized"));
         object _lock = new();
         Parallel.ForEach(rangePartitioner, new ParallelOptions { MaxDegreeOfParallelism = Parallelism }, range =>
         {
-            bool[] simulated = new bool[searchSize];
+            uint[] simulated = new uint[searchSize];
             RNG rng = new();
             for (int ind = range.Item1; ind < range.Item2; ind++)
             {
@@ -45,43 +357,26 @@ public static class Search
 
                 // Now simulate the results we want
                 for (int i = 0; i < searchSize; i++)
-                {
-                    uint val = rng.Next();
-                    simulated[i] = (val >= minInclusive && val < maxExclusive);
-                }
+                    simulated[i] = rng.Next();
 
                 // Search the simulated results for our pattern
-                int patternPos = 0;
-                for (int i = 0; i < searchSize; i++)
+                int patternIndex = pattern.CheckFirst(simulated, 0, simulated.Length);
+                if (patternIndex != -1)
                 {
-                    if (pattern[patternPos] == simulated[i])
+                    lock (_lock)
                     {
-                        patternPos++;
-                        if (patternPos >= pattern.Length)
+                        if (!foundSeed)
                         {
-                            lock (_lock)
-                            {
-                                if (!foundSeed)
-                                {
-                                    // This is the first seed found
-                                    foundSeed = true;
-                                    localResultSeed = seed;
-                                    localResultIndex = (i + 1) - patternPos;
-                                }
-                                else
-                                {
-                                    // Found multiple seeds with the pattern
-                                    foundExtraSeeds = true;
-                                }
-                            }
-                            break;
+                            // This is the first seed found
+                            foundSeed = true;
+                            localResultSeed = seed;
+                            localResultIndex = patternIndex;
                         }
-                    }
-                    else
-                    {
-                        // Pattern order not matched, reset to after the first element to continue scanning
-                        i -= patternPos;
-                        patternPos = 0;
+                        else
+                        {
+                            // Found multiple seeds with the pattern
+                            foundExtraSeeds = true;
+                        }
                     }
                 }
             }
@@ -102,18 +397,18 @@ public static class Search
     }
 
     /// <summary>
-    /// Finds values within a range consecutively a given number of times, within a search range.
+    /// Finds values matching a pattern element consecutively a given number of times, within a search range.
+    /// Only supports pattern elements with single RNG call requirements (to use less memory).
     /// </summary>
     /// <param name="seed">Seed to use</param>
     /// <param name="offset">Location in RNG sequence to begin the search</param>
     /// <param name="searchSize">Number of RNG values to advance in the sequence before aborting</param>
-    /// <param name="minInclusive">Lowest value that is within desired range</param>
-    /// <param name="maxExclusive">Above highest value that is within desired range</param>
+    /// <param name="patternElement">Pattern element to match for</param>
     /// <param name="amount">Number of consecutive values to find</param>
     /// <param name="stride">Number of RNG values between each relevant value (1 means none)</param>
     /// <param name="surroundingList">List filled with surrounding RNG values when successful, otherwise cleared</param>
     /// <returns>Index, or -1 if unsuccessful.</returns>
-    public static int FindConsecutive(uint seed, int offset, int searchSize, long minInclusive, long maxExclusive, int amount, int stride, List<uint[]> surroundingList)
+    public static int FindConsecutiveSingle(uint seed, int offset, int searchSize, IElement patternElement, int amount, int stride, List<uint[]> surroundingList)
     {
         RNG rng = new(seed);
 
@@ -136,6 +431,7 @@ public static class Search
         }
 
         int counter = 0;
+        uint[] singleRng = new uint[1];
         for (int pos = 0; pos < searchSize; pos += stride)
         {
             // Get next value we're interested in
@@ -152,7 +448,9 @@ public static class Search
                 surrounding[i][0] = rng.Next();
             }
 
-            if (val >= minInclusive && val < maxExclusive)
+            singleRng[0] = val;
+            int tempIndex = 0;
+            if (patternElement.Check(singleRng, ref tempIndex))
             {
                 // Found a new consecutive value. Increment counter, and if high enough,
                 // return the position where the values began.
@@ -195,20 +493,16 @@ public static class Search
     }
 
     /// <summary>
-    /// Attempts to find a boolean/ranged pattern of RNG within a seed.
-    /// Bytes 0 are not within range, 1 are within range, 2 are unknown.
+    /// Attempts to find a pattern of RNG within a seed.
     /// </summary>
     /// <param name="seed">RNG seed to use.</param>
-    /// <param name="pattern">Array representing known RNG calls that are within the desired range (true for within)</param>
+    /// <param name="pattern">Known RNG pattern that is within the desired range</param>
     /// <param name="offset">Location in RNG sequence to begin the search</param>
     /// <param name="searchSize">Number of RNG values to advance in the sequence before aborting</param>
-    /// <param name="minInclusive">Lowest value that is within desired range</param>
-    /// <param name="maxExclusive">Above highest value that is within desired range</param>
-    /// <param name="resultIndex">The index within the RNG sequence where the pattern starts</param>
-    /// <returns>True if successful, false otherwise.</returns>
-    public static bool TryFindPattern(uint seed, byte[] pattern, int offset, int searchSize, long minInclusive, long maxExclusive, out int resultIndex)
+    /// <returns>The first index of the pattern discovered, or -1 if none found.</returns>
+    public static int TryFindPattern(uint seed, Pattern pattern, int offset, int searchSize)
     {
-        bool[] simulated = new bool[searchSize];
+        uint[] simulated = new uint[searchSize];
         RNG rng = new(seed);
 
         // Advance to the starting location
@@ -217,33 +511,9 @@ public static class Search
 
         // Now simulate the results we want
         for (int i = 0; i < searchSize; i++)
-        {
-            uint val = rng.Next();
-            simulated[i] = (val >= minInclusive && val < maxExclusive);
-        }
+            simulated[i] = rng.Next();
 
         // Search the simulated results for our pattern
-        int patternPos = 0;
-        for (int i = 0; i < searchSize; i++)
-        {
-            if (pattern[patternPos] == 2 || pattern[patternPos] == (simulated[i] ? 1 : 0))
-            {
-                patternPos++;
-                if (patternPos >= pattern.Length)
-                {
-                    resultIndex = (i + 1) - patternPos;
-                    return true;
-                }
-            }
-            else
-            {
-                // Pattern order not matched, reset to after the first element to continue scanning
-                i -= patternPos;
-                patternPos = 0;
-            }
-        }
-
-        resultIndex = -1;
-        return false;
+        return pattern.CheckFirst(simulated, offset, searchSize);
     }
 }

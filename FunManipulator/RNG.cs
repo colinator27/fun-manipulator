@@ -3,7 +3,7 @@
 public class RNG
 {
     public static bool Seeds15Bit { get; private set; }
-    public static uint[] UniqueSeeds { get; private set; }
+    public static uint[]? UniqueSeeds { get; private set; }
     public static uint RandomPoly { get; private set; }
 
     public static void Initialize(bool is15bit = true, bool useOldPoly = false)

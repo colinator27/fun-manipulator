@@ -11,13 +11,16 @@
   },
   "SeedFinder": {
     "Seed": -1,
-    "SearchRange": 10000000
+    "SearchRange": 5000000
   },
 
   "BeepFilename": "beep.wav",
-  "BeepFrameOffset": -4,
+  "BeepFrameOffset": -2.5,
+  "BeepMsOffset": 0,
   "BeepCount": 5,
   "BeepInterval": 0.3,
+  "BeepEarlyMs": -16,
+  "BeepLateMs": -2,
 
   "Program": "FunManip"
 }

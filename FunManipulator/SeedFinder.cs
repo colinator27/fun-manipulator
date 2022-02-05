@@ -38,7 +38,7 @@ public static class SeedFinder
             Console.WriteLine("To enter boolean states, use T/F.");
             Console.WriteLine("To enter unknowns, use U.");
             Console.WriteLine("To end, enter blank line.");
-            List<byte> pattern = new();
+            Search.Pattern pattern = new();
             while (true)
             {
                 string line = Console.ReadLine()?.Trim() ?? "";
@@ -46,17 +46,17 @@ public static class SeedFinder
                     break;
                 if (line.ToLowerInvariant() == "t")
                 {
-                    pattern.Add(1);
+                    pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive));
                     continue;
                 }
                 if (line.ToLowerInvariant() == "f")
                 {
-                    pattern.Add(0);
+                    pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive) { Inverted = true });
                     continue;
                 }
                 if (line.ToLowerInvariant() == "u")
                 {
-                    pattern.Add(2);
+                    pattern.Elements.Add(new Search.ElementUnknown(false));
                     continue;
                 }
                 if (double.TryParse(line, out double val))
@@ -64,15 +64,20 @@ public static class SeedFinder
                     if (val < 0 || val > range)
                         Console.WriteLine("Warning: Value outside of range, ignoring.");
                     else
-                        pattern.Add((val >= minInclusive && val < maxExclusive) ? (byte)1 : (byte)0);
+                    {
+                        if (val >= minInclusive && val < maxExclusive)
+                            pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive));
+                        else
+                            pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive) { Inverted = true });
+                    }
+                    continue;
                 }
-                else
-                    Console.WriteLine("Warning: Invalid format, ignoring.");
+                Console.WriteLine("Warning: Invalid format, ignoring.");
             }
 
             Console.WriteLine("Searching...");
-            (long min, long max) = RNG.GetRange(range, minInclusive, maxExclusive);
-            if (Search.TryFindPattern(seed, pattern.ToArray(), 0, Config.Instance.SeedFinder.SearchRange, min, max, out int pos))
+            int pos = Search.TryFindPattern(seed, pattern, 0, Config.Instance.SeedFinder.SearchRange);
+            if (pos != -1)
                 Console.WriteLine($"Verified pattern at position {pos}");
             else
                 Console.WriteLine("Failed to verify pattern within search range");

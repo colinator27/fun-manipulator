@@ -59,7 +59,7 @@ public static class FunManip
         if (!NamingLetters.GetSeed(out uint seed, out int pos))
             return;
         Console.WriteLine($"Found seed ({seed}). Searching for fun values...");
-        (long min, long max) = RNG.GetRange(100, minFun - 1, maxFun - 1);
+        var elem = new Search.ElementRandomInRange(100, minFun - 1, maxFun - 1);
         int resultFrames = -1;
         int consecutive;
         List<uint[]> surrounding = new();
@@ -69,7 +69,7 @@ public static class FunManip
             int offset = pos + Config.Instance.FunManip.FunSearchOffset + 104 + (minimumFrames * 3); // Delay by at least 5 seconds
 
             // Now find two consecutive values we want
-            int distance = Search.FindConsecutive(seed, offset, Config.Instance.FunManip.FunSearchRange, min, max, consecutive, 3, surrounding);
+            int distance = Search.FindConsecutiveSingle(seed, offset, Config.Instance.FunManip.FunSearchRange, elem, consecutive, 3, surrounding);
             if (distance != -1)
             {
                 Console.WriteLine($"Found, distance={distance}, {consecutive} frames in a row. Results in waiting {(minimumFrames + (distance / 3) + (consecutive / 2)) / 30.0:F4} seconds");
@@ -97,9 +97,11 @@ public static class FunManip
 
         Console.WriteLine("Waiting for alt input...");
         const double timeForFrameMs = ((1.0 / 30.0) * 1000);
-        int targetMilliseconds = (int)(((resultFrames + Config.Instance.BeepFrameOffset) * timeForFrameMs) - (Beeps.Start * 1000));
-        int earlyMs = (int)(((resultFrames - 1) * timeForFrameMs) - (timeForFrameMs * (consecutive * 0.5)));
-        int lateMs = (int)(((resultFrames - 1) * timeForFrameMs) + (timeForFrameMs * (consecutive * 0.5)));
+        int targetMilliseconds = (int)(((resultFrames + Config.Instance.BeepFrameOffset) * timeForFrameMs) + 
+                                        Config.Instance.BeepMsOffset - (Beeps.Start * 1000));
+        int actualMs = (int)(resultFrames * timeForFrameMs);
+        int earlyMs = actualMs - (int)((consecutive / 2.0) * timeForFrameMs) + Config.Instance.BeepEarlyMs;
+        int lateMs = actualMs + (int)((consecutive / 2.0) * timeForFrameMs) + Config.Instance.BeepLateMs;
         int endMs = (int)(lateMs + (timeForFrameMs * 30 * 10));
         while (true)
         {
@@ -113,7 +115,7 @@ public static class FunManip
         while (clock.ElapsedTime.AsMilliseconds() < targetMilliseconds - (int)timeForFrameMs)
             Thread.Sleep(1);
         while (clock.ElapsedTime.AsMilliseconds() < targetMilliseconds) { }
-        Beeps.Sound.Play();
+        Beeps.Sound?.Play();
 
         Console.WriteLine("Played sound.");
 
@@ -124,11 +126,11 @@ public static class FunManip
             {
                 int time = clock.ElapsedTime.AsMilliseconds();
                 if (time <= earlyMs)
-                    Console.WriteLine("Warning: The press was likely early");
+                    Console.WriteLine($"Warning: The press was possibly early (delta={time - actualMs} ms)");
                 else if (time >= lateMs)
-                    Console.WriteLine("Warning: The press was likely late");
+                    Console.WriteLine($"Warning: The press was possibly late (delta={time - actualMs} ms)");
                 else
-                    Console.WriteLine("The press was likely accurate!");
+                    Console.WriteLine($"The press was likely accurate! (delta={time - actualMs} ms)");
                 break;
             }
         }

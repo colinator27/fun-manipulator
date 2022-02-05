@@ -9,7 +9,16 @@ namespace FunManipulator
 {
     public class Config
     {
-        public static Config Instance { get; private set; }
+        private static Config? _instance = null;
+        public static Config Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    throw new Exception("Config not loaded");
+                return _instance;
+            }
+        }
 
         public bool RNG15Bit { get; set; } = true;
         public bool RNGOldPoly { get; set; } = false;
@@ -19,8 +28,11 @@ namespace FunManipulator
 
         public string BeepFilename { get; set; } = "beep.wav";
         public double BeepFrameOffset { get; set; } = -4;
+        public int BeepMsOffset { get; set; } = 0;
         public int BeepCount { get; set; } = 5;
         public double BeepInterval { get; set; } = 0.3;
+        public int BeepEarlyMs { get; set; } = -16;
+        public int BeepLateMs { get; set; } = -2;
 
         public string Program { get; set; } = "";
 
@@ -41,7 +53,7 @@ namespace FunManipulator
 
         public static void Load(string filename)
         {
-            Instance = JsonSerializer.Deserialize<Config>(File.ReadAllBytes(filename));
+            _instance = JsonSerializer.Deserialize<Config>(File.ReadAllBytes(filename));
         }
     }
 }

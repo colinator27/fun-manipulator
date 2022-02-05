@@ -4,13 +4,13 @@ namespace FunManipulator
 {
     public class Beeps
     {
-        public static SoundBuffer Buffer;
-        public static Sound Sound;
-        public static double Start;
+        public static SoundBuffer? Buffer { get; private set; }
+        public static Sound? Sound { get; private set; }
+        public static double Start { get; private set; }
 
         public static void BuildData()
         {
-            SoundBuffer sound = new SoundBuffer(Config.Instance.BeepFilename);
+            SoundBuffer sound = new(Config.Instance.BeepFilename);
             short[] buffer = new short[(int)Math.Ceiling(sound.SampleRate * sound.ChannelCount * Config.Instance.BeepCount * Config.Instance.BeepInterval)];
             Parallel.For(0, Config.Instance.BeepCount, i =>
             {
@@ -25,8 +25,8 @@ namespace FunManipulator
 
         public static void Cleanup()
         {
-            Sound.Dispose();
-            Buffer.Dispose();
+            Sound?.Dispose();
+            Buffer?.Dispose();
         }
     }
 }

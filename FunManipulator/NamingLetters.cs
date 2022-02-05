@@ -13,7 +13,7 @@ public class NamingLetters
         while (true)
         {
             char curr = 'A';
-            bool[] pattern = new bool[42];
+            Search.Pattern pattern = new();
             bool[] keyStates = new bool[4];
             bool[] keyStatesLast = new bool[4];
             for (int i = 0; i < 21; i++)
@@ -31,28 +31,32 @@ public class NamingLetters
                     {
                         Console.Write($"\r '{curr}' => not visible");
                         Console.WriteLine();
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0, 0.5));
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0, 0.5));
                         break;
                     }
                     if (keyStates[1] && !keyStatesLast[1])
                     {
                         Console.Write($"\r '{curr}' => vertical lines");
                         Console.WriteLine();
-                        pattern[(i * 2) + 1] = true;
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0, 0.5));
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0.5, 1));
                         break;
                     }
                     if (keyStates[2] && !keyStatesLast[2])
                     {
                         Console.Write($"\r '{curr}' => horizontal lines");
                         Console.WriteLine();
-                        pattern[i * 2] = true;
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0.5, 1));
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0, 0.5));
                         break;
                     }
                     if (keyStates[3] && !keyStatesLast[3])
                     {
                         Console.Write($"\r '{curr}' => vertical and horizontal lines");
                         Console.WriteLine();
-                        pattern[i * 2] = true;
-                        pattern[(i * 2) + 1] = true;
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0.5, 1));
+                        pattern.Elements.Add(new Search.ElementRandomInRange(1, 0.5, 1));
                         break;
                     }
                     Thread.Sleep(33);
@@ -62,8 +66,7 @@ public class NamingLetters
             }
 
             Console.WriteLine("Searching for seed...");
-            (long letterMin, long letterMax) = RNG.GetRange(1, 0.5, 1);
-            if (!Search.TryFindSeedWithinRange(pattern, 0, 40000, letterMin, letterMax, out seed, out pos))
+            if (!Search.TryFindSeedWithinRange(pattern, 0, 40000, out seed, out pos))
             {
                 Console.WriteLine("Unable to find individual seed with the pattern.");
                 Console.WriteLine("Retry? Press Y or N.");
