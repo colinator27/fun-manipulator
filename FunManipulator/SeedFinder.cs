@@ -18,9 +18,33 @@ public static class SeedFinder
             }
             else
             {
-                if (!NamingLetters.GetSeed(out seed, out int pos))
-                    return;
-                Console.WriteLine($"Found seed: {seed} (at position {pos})");
+                if (ConsoleHelpers.ReadYesNo("Use naming screen?"))
+                {
+                    if (!NamingLetters.GetSeed(out seed, out int pos))
+                        return;
+                    Console.WriteLine($"Found seed: {seed} (at position {pos})");
+                }
+                else
+                {
+                    Console.WriteLine("Searching for seeds...");
+                    Search.Pattern pattern = PatternInput.Basic();
+                    List<(uint, int)> seedList = new();
+                    if (!Search.TryFindSeedWithinRange(pattern, 0, Config.Instance.SeedFinder.SearchRangeFind, out seed, out int pos, seedList))
+                    {
+                        if (seedList.Count != 0)
+                        {
+                            Console.WriteLine("Found multiple seeds:");
+                            foreach ((uint, uint) s in seedList)
+                                Console.WriteLine($" -> {s.Item1} (at {s.Item2})");
+                        }
+                        else
+                        {
+                            Console.WriteLine("No seeds matched!");
+                        }
+                        return;
+                    }
+                    Console.WriteLine($"Found seed: {seed} (at position {pos})");
+                }
             }
         }
 
@@ -30,55 +54,16 @@ public static class SeedFinder
             if (!ConsoleHelpers.ReadYesNo("Verify a pattern?"))
                 break;
 
-            double range = ConsoleHelpers.ReadLineDoubleMin("Enter random() range (>= 0): ", 0);
-            double minInclusive = ConsoleHelpers.ReadLineDoubleMin("Enter minimum inclusive value (>= 0): ", 0);
-            double maxExclusive = ConsoleHelpers.ReadLineDoubleRange($"Enter maximum exclusive value (in range): ", minInclusive, range);
-
-            Console.WriteLine("Enter estimated random() ranges.");
-            Console.WriteLine("To enter boolean states, use T/F.");
-            Console.WriteLine("To enter unknowns, use U.");
-            Console.WriteLine("To end, enter blank line.");
-            Search.Pattern pattern = new();
-            while (true)
-            {
-                string line = Console.ReadLine()?.Trim() ?? "";
-                if (string.IsNullOrEmpty(line))
-                    break;
-                if (line.ToLowerInvariant() == "t")
-                {
-                    pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive));
-                    continue;
-                }
-                if (line.ToLowerInvariant() == "f")
-                {
-                    pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive) { Inverted = true });
-                    continue;
-                }
-                if (line.ToLowerInvariant() == "u")
-                {
-                    pattern.Elements.Add(new Search.ElementUnknown(false));
-                    continue;
-                }
-                if (double.TryParse(line, out double val))
-                {
-                    if (val < 0 || val > range)
-                        Console.WriteLine("Warning: Value outside of range, ignoring.");
-                    else
-                    {
-                        if (val >= minInclusive && val < maxExclusive)
-                            pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive));
-                        else
-                            pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive) { Inverted = true });
-                    }
-                    continue;
-                }
-                Console.WriteLine("Warning: Invalid format, ignoring.");
-            }
+            Search.Pattern pattern = PatternInput.Basic();
 
             Console.WriteLine("Searching...");
-            int pos = Search.TryFindPattern(seed, pattern, 0, Config.Instance.SeedFinder.SearchRange);
-            if (pos != -1)
-                Console.WriteLine($"Verified pattern at position {pos}");
+            List<int> pos = Search.TryFindPattern(seed, pattern, 0, Config.Instance.SeedFinder.SearchRange);
+            if (pos.Count != 0)
+            {
+                Console.WriteLine($"Verified pattern at positions:");
+                foreach (int i in pos)
+                    Console.WriteLine($" -> {i}");
+            }
             else
                 Console.WriteLine("Failed to verify pattern within search range");
         }

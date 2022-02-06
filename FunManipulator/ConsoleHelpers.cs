@@ -62,10 +62,15 @@ namespace FunManipulator
 
         public static bool ReadYesNo(string msg)
         {
-            Console.Write($"{msg} (y/N): ");
-            if (Console.ReadLine()?.Trim().ToLowerInvariant() == "y")
-                return true;
-            return false;
+            while (true)
+            {
+                Console.Write($"{msg} (y/N): ");
+                string? key = Console.ReadLine()?.Trim().ToLowerInvariant();
+                if (key == "y")
+                    return true;
+                if (key == "n")
+                    return false;
+            }
         }
     }
 }

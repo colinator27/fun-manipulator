@@ -11,7 +11,8 @@ try
     Dictionary<string, ProgramExecutor> programs = new()
     {
         { "funmanip", FunManip.Run },
-        { "seedfinder", SeedFinder.Run }
+        { "seedfinder", SeedFinder.Run },
+        { "testing", Testing.Run }
     };
     string? program = Config.Instance.Program?.ToLowerInvariant();
     while (string.IsNullOrEmpty(program))

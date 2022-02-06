@@ -48,7 +48,8 @@ namespace FunManipulator
         public class SeedFinderConfig
         {
             public long Seed { get; set; } = -1;
-            public int SearchRange { get; set; } = 10000000;
+            public int SearchRange { get; set; } = 5000000;
+            public int SearchRangeFind { get; set; } = 500000;
         }
 
         public static void Load(string filename)

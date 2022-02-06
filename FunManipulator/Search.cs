@@ -330,7 +330,7 @@ public static class Search
     /// <param name="resultSeed">The seed that was found, if successful</param>
     /// <param name="resultIndex">The index within the RNG sequence where the pattern starts</param>
     /// <returns>True if successful, false otherwise.</returns>
-    public static bool TryFindSeedWithinRange(Pattern pattern, int offset, int searchSize, out uint resultSeed, out int resultIndex)
+    public static bool TryFindSeedWithinRange(Pattern pattern, int offset, int searchSize, out uint resultSeed, out int resultIndex, List<(uint, int)>? seedList = null)
     {
         uint localResultSeed = 0;
         int localResultIndex = 0;
@@ -365,6 +365,7 @@ public static class Search
                 {
                     lock (_lock)
                     {
+                        seedList?.Add((seed, patternIndex));
                         if (!foundSeed)
                         {
                             // This is the first seed found
@@ -500,7 +501,7 @@ public static class Search
     /// <param name="offset">Location in RNG sequence to begin the search</param>
     /// <param name="searchSize">Number of RNG values to advance in the sequence before aborting</param>
     /// <returns>The first index of the pattern discovered, or -1 if none found.</returns>
-    public static int TryFindPattern(uint seed, Pattern pattern, int offset, int searchSize)
+    public static List<int> TryFindPattern(uint seed, Pattern pattern, int offset, int searchSize)
     {
         uint[] simulated = new uint[searchSize];
         RNG rng = new(seed);
@@ -514,6 +515,6 @@ public static class Search
             simulated[i] = rng.Next();
 
         // Search the simulated results for our pattern
-        return pattern.CheckFirst(simulated, offset, searchSize);
+        return pattern.Check(simulated, offset, searchSize);
     }
 }

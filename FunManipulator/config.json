@@ -11,7 +11,8 @@
   },
   "SeedFinder": {
     "Seed": -1,
-    "SearchRange": 5000000
+    "SearchRange": 5000000,
+    "SearchRangeFind": 1000000
   },
 
   "BeepFilename": "beep.wav",
@@ -22,5 +23,5 @@
   "BeepEarlyMs": -16,
   "BeepLateMs": -2,
 
-  "Program": "FunManip"
+  "Program": "SeedFinder"
 }
