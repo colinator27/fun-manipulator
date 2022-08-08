@@ -12,6 +12,7 @@ try
     {
         { "funmanip", FunManip.Run },
         { "seedfinder", SeedFinder.Run },
+        { "dogimanip", DogiManip.Run },
         { "testing", Testing.Run }
     };
     string? program = Config.Instance.Program?.ToLowerInvariant();
