@@ -541,8 +541,8 @@ game at the same time.
 
                 // Calculate number of times to go up/down, and whether to menu buffer
                 int stepCount = preview.Seed.StepCount;
-                int upDownTimes = 7 + ((stepCount - 220) / 2);
                 bool menuBuffer = (stepCount % 2 == 1);
+                int upDownTimes = 7 + ((stepCount - 220) / 2) + (menuBuffer ? 1 : 0);
 
                 if (CachedChosenPreview != ChosenPreview)
                 {
