@@ -1,8 +1,10 @@
-﻿using System;
+﻿using SFML.Window;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace FunManipulator
@@ -25,6 +27,7 @@ namespace FunManipulator
 
         public FunManipConfig FunManip { get; set; } = new();
         public SeedFinderConfig SeedFinder { get; set; } = new();
+        public DogiManipConfig DogiManip { get; set; } = new();
 
         public string BeepFilename { get; set; } = "beep.wav";
         public double BeepFrameOffset { get; set; } = -4;
@@ -52,9 +55,28 @@ namespace FunManipulator
             public int SearchRangeFind { get; set; } = 500000;
         }
 
+        public class DogiManipConfig
+        {
+            public float WindowScale { get; set; } = 2f;
+            public Keyboard.Key ChooseHoveredKey { get; set; } = Keyboard.Key.A;
+            public Keyboard.Key ScreenshotKey { get; set; } = Keyboard.Key.PageUp;
+            public Keyboard.Key[] PreviewSelectKeys { get; set; } = { Keyboard.Key.Num1, Keyboard.Key.Num2, Keyboard.Key.Num3, Keyboard.Key.Num4, Keyboard.Key.Num5, Keyboard.Key.Num6 };
+            public float ScoreMaxDistance { get; set; } = 4f;
+            public float ScoreNumRightBias { get; set; } = 0.25f;
+        }
+
+        public static JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            Converters = { new JsonStringEnumConverter() },
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
         public static void Load(string filename)
         {
-            _instance = JsonSerializer.Deserialize<Config>(File.ReadAllBytes(filename));
+            _instance = JsonSerializer.Deserialize<Config>(File.ReadAllBytes(filename), JsonOptions);
         }
     }
 }

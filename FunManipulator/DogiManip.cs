@@ -20,6 +20,7 @@ public class DogiManip
             StepCount = stepCount;
             Snowballs = snowballs;
 
+            // Additionally calculate number of snowballs to the right of the puzzle
             SnowballsRightOfPuzzle = 0;
             foreach (var snowball in Snowballs)
             {
@@ -30,10 +31,10 @@ public class DogiManip
 
         public void CalculateScore()
         {
-            const float maxDistance = 8f;
-            const float numRightBias = 0.25f;
+            float maxDistance = Config.Instance.DogiManip.ScoreMaxDistance;
+            float numRightBias = Config.Instance.DogiManip.ScoreNumRightBias;
 
-            // Reset snowball distances, count number to right of puzzle
+            // Reset snowball distances, and count number to right of puzzle
             foreach (var snowball in Snowballs)
                 snowball.ClosestDistance = -1f;
             int numToRightOfPuzzle = 0;
@@ -53,6 +54,7 @@ public class DogiManip
                     continue;
                 foreach (var snowball in Snowballs)
                 {
+                    // Check distance between the snowballs
                     float dx = snowball.X - ((editorSnowball.Position.X * 0.5f) + ViewX);
                     float dy = snowball.Y - ((editorSnowball.Position.Y * 0.5f) + ViewY);
                     float distance = MathF.Sqrt((dx * dx) + (dy * dy));
@@ -102,8 +104,8 @@ public class DogiManip
     private class EditorSnowball
     {
         public const float CircleRadius = 2.8f * 2.0f;
-        private const int circlePrecision = 8;
-        private static CircleShape shape = new(CircleRadius, circlePrecision);
+        public const int CirclePrecision = 8;
+        private static CircleShape shape = new(CircleRadius, CirclePrecision);
         private static Vector2f origin = new(CircleRadius, CircleRadius);
 
         public Vector2f Position { get; set; }
@@ -117,11 +119,18 @@ public class DogiManip
 
             if (Active)
             {
+                if (ChosenPreview != -1)
+                {
+                    // There's no need for this to exist; we already chose
+                    EditorSnowballsToDelete.Add(this);
+                    return;
+                }
+
                 // Follow mouse
                 Position = MousePosition;
 
                 // Don't process or display "offscreen"
-                if (Position.X < 240)
+                if (Position.X < 240 || Position.X > 460)
                     return;
 
                 // Check for being placed
@@ -144,24 +153,18 @@ public class DogiManip
 
                 if (hovering)
                 {
-                    // Check for deletion
-                    if (MouseRJustReleased)
+                    if (CreatingSnowballs)
                     {
-                        // todo
+                        if (MouseRJustReleased)
+                        {
+                            // Mark for deletion
+                            EditorSnowballsToDelete.Add(this);
+                        }
                     }
-                }
-
-                if (!CreatingSnowballs)
-                {
-                    if (hovering)
+                    else
                     {
                         // Hover color
                         color = Color.Yellow;
-                        if (MouseLJustPressed)
-                        {
-                            // Select
-                            Active = true;
-                        }
                     }
                 }
             }
@@ -180,22 +183,24 @@ public class DogiManip
         public Color PressColor { get; set; } = new Color(200, 200, 200);
         public Color OutlineColor { get; set; } = new Color(80, 80, 80);
         public int OutlineThickness { get; set; } = 1;
+        protected bool IsHovered { get; private set; } = false;
 
         public Button(float x, float y, float width, float height)
         {
+            // Make rectangle
             shape = new RectangleShape(new Vector2f(width, height));
             shape.Position = new Vector2f(x, y);
         }
 
         public virtual void Update(RenderTexture texture)
         {
-            // Determine color
-            bool hovered = (MousePosition.X >= shape.Position.X &&
-                            MousePosition.Y >= shape.Position.Y &&
-                            MousePosition.X <= shape.Position.X + shape.Size.X &&
-                            MousePosition.Y <= shape.Position.Y + shape.Size.Y);
+            // Update color, process clicks
+            IsHovered = (MousePosition.X >= shape.Position.X &&
+                         MousePosition.Y >= shape.Position.Y &&
+                         MousePosition.X <= shape.Position.X + shape.Size.X &&
+                         MousePosition.Y <= shape.Position.Y + shape.Size.Y);
             Color color;
-            if (hovered)
+            if (IsHovered)
             {
                 if (MouseLJustReleased)
                     OnClick();
@@ -226,9 +231,11 @@ public class DogiManip
 
         public TextButton(float x, float y, float width, float height, string text, Action onClick) : base(x, y, width, height)
         {
+            // Create text
             this.text = new Text(text, Font, 16);
             this.text.FillColor = Color.White;
             this.text.Position = new Vector2f(x + 4, y - 2);
+
             ActionOnClick = onClick;
         }
 
@@ -241,6 +248,7 @@ public class DogiManip
 
         public override void OnClick()
         {
+            // Perform desired action
             ActionOnClick();
         }
     }
@@ -268,31 +276,65 @@ public class DogiManip
             base.Update(texture);
 
             texture.Draw(Sprite);
+
+            // Change hovered preview index to current one, if hovered
+            if (IsHovered)
+                HoveredPreview = Index;
+
+            // Selection using keyboard buttons
+            if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.PreviewSelectKeys[Index]))
+            {
+                ChosenPreview = Index;
+                CreatingSnowballs = false;
+                CachedChosenPreview = -1;
+            }
         }
 
         public override void OnClick()
         {
+            // Select this preview as the final one!
             ChosenPreview = Index;
+            CreatingSnowballs = false;
+            CachedChosenPreview = -1;
         }
     }
-
+    
+    // The view that the game should be at
     private const float ViewX = 0, ViewY = 580 - 240;
 
-    private static readonly List<Seed> Seeds = new();
+    // Mouse states
     private static Vector2f MousePosition = new Vector2f(0, 0);
     private static bool MouseLJustPressed = false;
     private static bool MouseLJustReleased = false;
     private static bool MouseRJustPressed = false;
     private static bool MouseRJustReleased = false;
-    private static readonly List<EditorSnowball> EditorSnowballs = new();
-    private static bool CreatingSnowballs = true;
+
+    // Seeds and the matching previews discovered
+    private static readonly List<Seed> Seeds = new();
     private static List<PreviewButton> Previews = new();
+
+    // Misc. assets
     private static Sprite? BackgroundSprite;
-    private static Sprite? BackgroundLayer1;
-    private static Sprite? BackgroundLayer2;
+    private static Sprite? PreviewBackgroundLayer;
+    private static Sprite? PreviewForegroundLayer;
+    private static Font? Font;
+
+    // Editing states
+    private static readonly List<EditorSnowball> EditorSnowballs = new();
+    private static readonly List<EditorSnowball> EditorSnowballsToDelete = new();
+    private static bool CreatingSnowballs = true;
+    private static int HoveredPreview = 0;
     private static int ChosenPreview = -1;
 
-    private static Font? Font;
+    // Cached text for instructions
+    private static Text? BeginText = null;
+    private static int CachedChosenPreview = -1;
+    private static Text? ChosenPreviewInstructionText = null;
+    private static Text? ChosenPreviewQuickText = null;
+
+    // Game screenshot
+    private static Texture? GameTexture = null;
+    private static Sprite? GameSprite = null;
 
     public static void Run()
     {
@@ -301,26 +343,62 @@ public class DogiManip
 
         Console.WriteLine("Initializing window...");
 
-        const int windowScale = 2;
+        // Load mini-preview images
+        var previewBackgroundTex = new Texture("dogimanip_bg_preview.png");
+        var previewForegroundTex = new Texture("dogimanip_fg_preview.png");
+        PreviewBackgroundLayer = new Sprite(previewBackgroundTex);
+        PreviewForegroundLayer = new Sprite(previewForegroundTex);
 
+        // Load old overlay and background images
         var bgImage = new Texture("dogimanip_bg.png");
-        var bgImageLayer1 = new Texture("dogimanip_bg_layer1.png");
-        var bgImageLayer2 = new Texture("dogimanip_bg_layer2.png");
-        var overlayImage = new Texture("dogimanip_overlay.png");
         BackgroundSprite = new Sprite(bgImage);
-        BackgroundLayer1 = new Sprite(bgImageLayer1);
-        BackgroundLayer2 = new Sprite(bgImageLayer2);
+        var oldOverlayImage = new Texture("dogimanip_old_overlay.png");
+        var oldOverlaySprite = new Sprite(oldOverlayImage);
+        oldOverlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
+
+        // Load overlay image
+        var overlayImage = new Texture("dogimanip_overlay.png");
         var overlaySprite = new Sprite(overlayImage);
         overlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
-        var overlayRectangle = new RectangleShape(new Vector2f(240, 480));
-        overlayRectangle.FillColor = new Color(0, 0, 0, 120);
 
+        // Make dark rectangle on left side of the screen
+        var overlayRectangle = new RectangleShape(new Vector2f(240, 480));
+        overlayRectangle.FillColor = new Color(0, 0, 0, 150);
+
+        // Load font
         Font = new Font("8bitoperator_jve.ttf");
 
+        // Title in top left
         var labelText = new Text("Dogi Manip", Font, 32);
         labelText.FillColor = Color.White;
         labelText.Position = new Vector2f(16, 0);
 
+        // Begin/helping text
+        BeginText = new Text(@$"Place snowballs in the area on
+the right.
+
+Screenshot game - {Config.Instance.DogiManip.ScreenshotKey}
+   (updates background to be the
+    screenshot, which you can use
+    to place the snowballs)
+
+Choose hovered key - {Config.Instance.DogiManip.ChooseHoveredKey}
+   (chooses the seed currently 
+    shown by green or red overlay)
+
+Preview select keys - 
+   {String.Join(", ", Config.Instance.DogiManip.PreviewSelectKeys.Select(p => p.ToString()).ToArray())}
+   (chooses #1 to #6 of the previews)
+
+On Windows, the window will not 
+focus unless you use the taskbar. 
+This allows you to move in the 
+game at the same time.
+", Font, 16);
+        BeginText.FillColor = Color.White;
+        BeginText.Position = new Vector2f(12, 100);
+
+        // Create restart button
         var restartButton = new TextButton(10, 50, 60, 20, "Restart", () =>
         {
             EditorSnowballs.Clear();
@@ -328,16 +406,54 @@ public class DogiManip
             CreatingSnowballs = true;
             Previews.Clear();
             ChosenPreview = -1;
+            CachedChosenPreview = -1;
+            HoveredPreview = 0;
         });
 
-        var view = new View(new FloatRect(0, 0, 640, 480));
+        // Set up view and render texture for window
+        // We want to draw to a 640x480 canvas, not whatever gets scaled to
+        var view = new View();
+        view.Size = new Vector2f(640, 480);
+        view.Center = new Vector2f(320, 240);
+        void updateView(uint width, uint height)
+        {
+            // Create black bars when resized
+            const float viewRatio = 640f / 480f;
+            float windowRatio = width / (float)height;
+            float posX = 0;
+            float posY = 0;
+            float sizeX = 1;
+            float sizeY = 1;
+
+            if (windowRatio >= viewRatio)
+            {
+                // Horizontal spacing
+                sizeX = viewRatio / windowRatio;
+                posX = (1 - sizeX) / 2f;
+            }
+            else
+            {
+                // Vertical spacing
+                sizeY = windowRatio / viewRatio;
+                posY = (1 - sizeY) / 2f;
+            }
+
+            view.Viewport = new FloatRect(posX, posY, sizeX, sizeY);
+        }
+        updateView(640, 480);
         var renderTex = new RenderTexture(640, 480);
 
+        // Always start with one snowball
         EditorSnowballs.Add(new());
-
-        var window = new RenderWindow(new VideoMode(640 * windowScale, 480 * windowScale), "Dogi Manip Tool", Styles.Default, new ContextSettings { });
+        
+        // Initialize window and its settings
+        float windowScale = Config.Instance.DogiManip.WindowScale;
+        var window = new RenderWindow(new VideoMode((uint)(640f * windowScale), (uint)(480f * windowScale)), "Dogi Manip Tool", Styles.Default, new ContextSettings { });
+        PlatformSpecific.ConfigureAppWindow(window.SystemHandle);
         window.SetVerticalSyncEnabled(true);
         window.SetView(view);
+
+        // Window event handling
         window.Closed += (ev, args) => window.Close();
         window.MouseButtonPressed += (ev, args) =>
         {
@@ -353,87 +469,214 @@ public class DogiManip
             else if (args.Button == Mouse.Button.Right)
                 MouseRJustReleased = true;
         };
-        window.KeyPressed += (ev, args) =>
+        window.Resized += (ev, args) =>
         {
-            if (args.Code == Keyboard.Key.Enter)
-            {
-                if (CreatingSnowballs)
-                {
-                    if (EditorSnowballs.Last().Active)
-                        EditorSnowballs.RemoveAt(EditorSnowballs.Count - 1);
-                    CreatingSnowballs = false;
-                }
-
-                PerformSearch();
-            }
+            updateView(args.Width, args.Height);
+            window.SetView(view);
         };
+
+        // Main loop
         while (window.IsOpen)
         {
+            if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.ScreenshotKey))
+            {
+                // While holding screenshot key, take screenshots and update background
+                var screenshot = PlatformSpecific.TakeScreenshotOfGame();
+                if (screenshot.Data != null)
+                {
+                    // Dispose of old screenshots
+                    GameSprite?.Dispose();
+                    GameTexture?.Dispose();
+
+                    // Load new screenshot into SFML
+                    GameTexture = new Texture(screenshot.Data);
+                    GameSprite = new Sprite(GameTexture);
+
+                    // Scale screenshot to 640x480
+                    GameSprite.Scale = new Vector2f(640f / GameTexture.Size.X, 480f / GameTexture.Size.Y);
+                }
+            }
+
+            // Run window events
+            window.DispatchEvents();
+
+            // Update mouse position
             MousePosition = window.MapPixelToCoords(Mouse.GetPosition(window));
 
-            window.DispatchEvents();
+            // Draw background
             renderTex.Clear(Color.Black);
-            renderTex.Draw(BackgroundSprite);
-            renderTex.Draw(overlaySprite);
+            if (GameSprite == null)
+            {
+                // No screenshot, use old method
+                renderTex.Draw(BackgroundSprite);
+                renderTex.Draw(oldOverlaySprite);
+            }
+            else
+            {
+                // Screenshot being used, draw that instead
+                renderTex.Draw(GameSprite);
+                renderTex.Draw(overlaySprite);
+            }
+
+            // Draw snowballs
+            // Note that new snowballs can be added during iteration, so this ignores them
             int snowballCount = EditorSnowballs.Count;
             for (int i = 0; i < snowballCount; i++)
                 EditorSnowballs[i].Update(renderTex);
+
+            // Draw overlay on left side of screen, as well as title
             renderTex.Draw(overlayRectangle);
             renderTex.Draw(labelText);
 
+            // Draw buttons
             restartButton.Update(renderTex);
 
             if (ChosenPreview != -1 && /* just in case there's an error */ ChosenPreview < Previews.Count)
             {
+                // Update "hovered" preview to be this one, for later on
+                HoveredPreview = ChosenPreview;
+
+                // Draw chosen/final preview
                 var preview = Previews[ChosenPreview];
+
+                // Calculate number of times to go up/down, and whether to menu buffer
                 int stepCount = preview.Seed.StepCount;
-                var text = new Text($"WIP setup instructions\nMore will be here later\n\nstep count={stepCount}\n{(stepCount % 2 == 0 ? "second/bottom pixel" : "first/top pixel")}\ngo up/down {12 + ((stepCount - 220) / 2)} times at bridge", Font, 16);
-                text.Position = new Vector2f(10, 100);
-                renderTex.Draw(text);
+                int upDownTimes = 7 + ((stepCount - 220) / 2);
+                bool menuBuffer = (stepCount % 2 == 1);
+
+                if (CachedChosenPreview != ChosenPreview)
+                {
+                    // Generate text only one time to reduce memory allocations
+                    ChosenPreviewInstructionText = new Text($@"Setup instructions
+- Hold right into slope
+- Press up and keep holding right
+- After hitting, release up
+- Press down to get on bridge
+   (keep holding right)
+{(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
+- Go up/down {upDownTimes} times at bridge
+
+(step count={stepCount})", Font, 16);
+                    ChosenPreviewInstructionText.Position = new Vector2f(10, 100);
+
+                    ChosenPreviewQuickText = new Text($@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times", Font, 32);
+                    ChosenPreviewQuickText.FillColor = Color.Red;
+                    ChosenPreviewQuickText.Position = new Vector2f(10, 320);
+
+                    CachedChosenPreview = ChosenPreview;
+                }
+
+                // Actually draw the labels
+                renderTex.Draw(ChosenPreviewInstructionText);
+                renderTex.Draw(ChosenPreviewQuickText);
             }
             else
             {
-                foreach (var preview in Previews)
-                    preview.Update(renderTex);
+                if (Previews.Count == 0)
+                {
+                    // Draw helping text
+                    renderTex.Draw(BeginText);
+                }
+                else
+                {
+                    // Draw live previews
+                    foreach (var preview in Previews)
+                        preview.Update(renderTex);
+                }
             }
 
-            renderTex.Display();
+            // Draw "hovered" (defaults to #1) preview overlay; snowballs overlayed on top
+            if (EditorSnowballs.Count >= 3 && HoveredPreview < Previews.Count)
+            {
+                // Create shape
+                CircleShape shape = new(EditorSnowball.CircleRadius, EditorSnowball.CirclePrecision);
+                if (HoveredPreview == 0)
+                {
+                    // Draw green to convey that it's #1, so higher confidence
+                    shape.FillColor = new Color(0, 206, 20, 120);
+                }
+                else
+                {
+                    // Draw red to convey it's not #1, meaning it was an explicit mouse hover
+                    shape.FillColor = new Color(200, 0, 0, 120);
+                }
+                Vector2f origin = new(shape.Radius, shape.Radius);
 
+                // Draw snowballs from its seed
+                var seed = Previews[HoveredPreview].Seed;
+                foreach (var snowball in seed.Snowballs)
+                {
+                    shape.Position = new Vector2f(((snowball.X - ViewX) * 2f) - 1f, ((snowball.Y - ViewY) * 2f) - 1f) - (origin * 0.5f);
+                    renderTex.Draw(shape);
+                }
+
+                if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.ChooseHoveredKey))
+                {
+                    // When this key is pressed, select this preview as the final choice
+                    if (ChosenPreview != HoveredPreview)
+                    {
+                        ChosenPreview = HoveredPreview;
+                        CreatingSnowballs = false;
+                        CachedChosenPreview = -1;
+                    }
+                }
+            }
+            
+            // Reset the hovered preview every frame
+            HoveredPreview = 0;
+
+            // Final draw to the screen
+            renderTex.Display();
             window.Clear();
             window.Draw(new Sprite(renderTex.Texture));
             window.Display();
 
+            // Clear mouse states
             MouseLJustPressed = false;
             MouseLJustReleased = false;
             MouseRJustPressed = false;
             MouseRJustReleased = false;
+
+            // Remove snowballs that are marked to be deleted
+            bool doNewSearch = (EditorSnowballsToDelete.Count != 0);
+            foreach (var snowball in EditorSnowballsToDelete)
+                EditorSnowballs.Remove(snowball);
+            EditorSnowballsToDelete.Clear();
+            if (doNewSearch)
+                PerformSearch();
+
+            // If there's no snowball left, make sure that one gets created
+            if (CreatingSnowballs && EditorSnowballs.Count == 0)
+                EditorSnowballs.Add(new());
         }
     }
 
+    /// <summary>
+    /// Loads precomputed snowball position information, and their related RNG seed data
+    /// </summary>
     private static void LoadData()
     {
-        using (FileStream fs = new FileStream("dogimanip_snowdata_15bit.bin", FileMode.Open))
+        using FileStream fs = new("dogimanip_snowdata_15bit.bin", FileMode.Open);
+        using BinaryReader br = new(fs);
+        while (fs.Position < fs.Length)
         {
-            using (BinaryReader br = new BinaryReader(fs))
+            int seedIndex = br.ReadUInt16();
+            int stepCount = br.ReadByte();
+            int snowballCount = br.ReadByte();
+            List<Seed.Snowball> snowballs = new(snowballCount);
+            for (int i = 0; i < snowballCount; i++)
             {
-                while (fs.Position < fs.Length)
-                {
-                    int seedIndex = br.ReadUInt16();
-                    int stepCount = br.ReadByte();
-                    int snowballCount = br.ReadByte();
-                    List<Seed.Snowball> snowballs = new(snowballCount);
-                    for (int i = 0; i < snowballCount; i++)
-                    {
-                        float x = br.ReadSingle();
-                        float y = br.ReadSingle();
-                        snowballs.Add(new(x, y));
-                    }
-                    Seeds.Add(new(seedIndex, stepCount, snowballs));
-                }
+                float x = br.ReadSingle();
+                float y = br.ReadSingle();
+                snowballs.Add(new(x, y));
             }
+            Seeds.Add(new(seedIndex, stepCount, snowballs));
         }
     }
 
+    /// <summary>
+    /// Searches all seeds to find the best matches, using a scoring system.
+    /// </summary>
     private static void PerformSearch()
     {
         // Do calculations
@@ -441,6 +684,7 @@ public class DogiManip
         List<Seed> highestScoring = new(maxSeedsToList);
         foreach (var seed in Seeds)
         {
+            // Calculate seed's score and see if it's one of the highest scoring
             seed.CalculateScore();
             if (highestScoring.Count == 0)
                 highestScoring.Add(seed);
@@ -491,28 +735,34 @@ public class DogiManip
             }
         }
 
+        // Create visual previews on the left side of the screen
         MakePreviews(highestScoring);
     }
 
     private static void MakePreviews(List<Seed> seeds)
     {
+        // Remove old previews
         Previews.Clear();
 
+        // Translation of background
         RenderStates backgroundStates = RenderStates.Default;
         backgroundStates.Transform.Translate(new Vector2f(-152, -8));
 
-        const int circlePrecision = 8;
-        CircleShape shape = new(EditorSnowball.CircleRadius * 0.5f, circlePrecision);
+        // Shape and origin of snowballs
+        CircleShape shape = new(EditorSnowball.CircleRadius * 0.5f, EditorSnowball.CirclePrecision);
         Vector2f origin = new(shape.Radius, shape.Radius);
 
+        // Go through each preview, in both rows, and draw them
         int index = 1;
         int row = 0, col = 0;
         foreach (var seed in seeds)
         {
+            // Create texture with background
             RenderTexture tex = new RenderTexture(58, 180);
             tex.Clear(Color.Black);
-            tex.Draw(BackgroundLayer1, backgroundStates);
+            tex.Draw(PreviewBackgroundLayer, backgroundStates);
 
+            // Draw number label
             var labelText = new Text($"#{index++}", Font, 16);
             labelText.FillColor = index == 2 ? Color.Yellow : Color.Red;
             labelText.OutlineColor = Color.Black;
@@ -520,26 +770,28 @@ public class DogiManip
             labelText.Position = new Vector2f(4, -4);
             tex.Draw(labelText);
 
+            // Draw snowballs
             foreach (var snowball in seed.Snowballs)
             {
                 shape.Position = new Vector2f((snowball.X - ViewX) - 152, (snowball.Y - ViewY) - 8) - (origin * 0.5f);
                 tex.Draw(shape);
             }
 
-            tex.Draw(BackgroundLayer2, backgroundStates);
-
+            // Draw top layer
+            tex.Draw(PreviewForegroundLayer, backgroundStates);
+            
+            // Mark texture for displaying, and create/add UI button
             tex.Display();
-
             PreviewButton button = new(20 + (col * 72), 100 + (row * 188), tex, index - 2, seed);
+            Previews.Add(button);
 
+            // Advance to next column, and row if necessary
             col++;
             if (col >= 3)
             {
                 col = 0;
                 row++;
             }
-
-            Previews.Add(button);
         }
     }
 }

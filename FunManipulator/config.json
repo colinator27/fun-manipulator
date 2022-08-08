@@ -14,6 +14,21 @@
     "SearchRange": 5000000,
     "SearchRangeFind": 1000000
   },
+  "DogiManip": {
+    "WindowScale": 2,
+    "ChooseHoveredKey": "A",
+    "ScreenshotKey": "PageUp",
+    "PreviewSelectKeys": [
+      "Num1",
+      "Num2",
+      "Num3",
+      "Num4",
+      "Num5",
+      "Num6"
+    ],
+    "ScoreMaxDistance": 4,
+    "ScoreNumRightBias": 0.25
+  },
 
   "BeepFilename": "beep.wav",
   "BeepFrameOffset": -2.5,
