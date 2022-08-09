@@ -38,7 +38,6 @@ public static class WinAPI
     public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")]
     public static extern bool AdjustWindowRectEx(ref Rect lpRect, uint dwStyle, bool bMenu, uint dwExStyle); 
-
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -50,6 +49,7 @@ public static class WinAPI
     public const int SW_SHOWNOACTIVATE = 4;
     public const int SW_SHOW = 5;
     public const int SW_MINIMIZE = 6;
+    public const int SW_SHOWMINNOACTIVE = 7;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct DWM_BLURBEHIND
@@ -79,9 +79,14 @@ public static class WinAPI
 
     public const int GWL_EXSTYLE = -20;
     public const int GWL_STYLE = -16;
+    public const uint WS_MAXIMIZEBOX = 0x00010000;
+    public const uint WS_MINIMIZEBOX = 0x00020000;
     public const uint WS_MINIMIZE = 0x20000000;
     public const uint WS_EX_NOACTIVATE = 0x08000000;
     public const uint WS_EX_APPWINDOW = 0x00040000;
+    public const uint WS_EX_TOPMOST = 0x00000008;
+    public const uint WS_EX_LAYERED = 0x00080000;
+    public const int CS_DROPSHADOW = 0x00020000;
 #pragma warning restore CA1416 // Validate platform compatibility
 }
 

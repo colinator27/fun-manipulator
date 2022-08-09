@@ -284,7 +284,7 @@ public class DogiManip
                 HoveredPreview = Index;
 
             // Selection using keyboard buttons
-            if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.PreviewSelectKeys[Index]))
+            if (Config.Instance.DogiManip.PreviewSelectKeys[Index].CheckInput())
             {
                 ChosenPreview = Index;
                 CreatingSnowballs = false;
@@ -409,13 +409,7 @@ game at the same time.
         // Create restart button
         var restartButton = new TextButton(10, 50, 60, 20, "Restart", () =>
         {
-            EditorSnowballs.Clear();
-            EditorSnowballs.Add(new());
-            CreatingSnowballs = true;
-            Previews.Clear();
-            ChosenPreview = -1;
-            CachedChosenPreview = -1;
-            HoveredPreview = 0;
+            Restart();
         });
 
         // Set up view and render texture for window
@@ -453,7 +447,7 @@ game at the same time.
 
         // Always start with one snowball
         EditorSnowballs.Add(new());
-        
+
         // Initialize window and its settings
         float windowScale = Config.Instance.WindowScale;
         var window = new RenderWindow(new VideoMode((uint)(640f * windowScale), (uint)(480f * windowScale)), "Dogi Manip Tool", Styles.Default, new ContextSettings { });
@@ -492,37 +486,32 @@ game at the same time.
         bool minimizeTogglePressed = false;
         while (window.IsOpen)
         {
-            if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.ScreenshotKey))
+            if (Config.Instance.DogiManip.ScreenshotKey.CheckInput())
             {
                 // While holding screenshot key, take screenshots and update background
-                var screenshot = PlatformSpecific.TakeScreenshotOfGame();
-                if (screenshot.Data != null)
-                {
-                    // Dispose of old screenshots
-                    GameSprite?.Dispose();
-                    GameTexture?.Dispose();
-
-                    // Load new screenshot into SFML
-                    GameTexture = new Texture(screenshot.Data);
-                    GameSprite = new Sprite(GameTexture);
-
-                    // Scale screenshot to 640x480
-                    GameSprite.Scale = new Vector2f(640f / GameTexture.Size.X, 480f / GameTexture.Size.Y);
-                }
+                TakeScreenshot();
             }
 
             // Process moving to game window, when window is transparent
             if (Config.Instance.WindowTransparent)
             {
-                if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.MoveToGameKey))
+                if (Config.Instance.DogiManip.MoveToGameKey.CheckInput())
                 {
+                    if (PlatformSpecific.IsWindowMinimized(window.SystemHandle))
+                    {
+                        // Take screenshot before covering the game
+                        TakeScreenshot();
+
+                        // Reset beforehand as well
+                        Restart();
+                    }
                     PlatformSpecific.MoveWindowToGameWindow(window.SystemHandle, false);
                 }
             }
 
             // Process minimize toggle
             bool lastMinimizeTogglePressed = minimizeTogglePressed;
-            minimizeTogglePressed = Keyboard.IsKeyPressed(Config.Instance.DogiManip.ToggleMinimizedKey);
+            minimizeTogglePressed = Config.Instance.DogiManip.ToggleMinimizedKey.CheckInput();
             if (minimizeTogglePressed && !lastMinimizeTogglePressed)
             {
                 PlatformSpecific.ToggleWindowMinimized(window.SystemHandle);
@@ -538,6 +527,14 @@ game at the same time.
             if (Config.Instance.WindowTransparent)
             {
                 renderTex.Clear(new Color(0, 0, 0, 0));
+                if (GameSprite != null)
+                {
+                    // Screenshot being used
+                    GameSprite.Color = new Color(255, 255, 255, 160);
+                    renderTex.Draw(GameSprite);
+                    overlaySprite.Color = new Color(255, 255, 255, 160);
+                    renderTex.Draw(overlaySprite);
+                }
             }
             else
             {
@@ -660,7 +657,7 @@ game at the same time.
                     renderTex.Draw(shape);
                 }
 
-                if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.ChooseHoveredKey))
+                if (Config.Instance.DogiManip.ChooseHoveredKey.CheckInput())
                 {
                     // When this key is pressed, select this preview as the final choice
                     if (ChosenPreview != HoveredPreview)
@@ -889,5 +886,34 @@ game at the same time.
 
         if (currStep != -1)
             CustomInstructions[currStep] = (sb.ToString().Trim(), sbQuick.ToString().Trim());
+    }
+
+    public static void Restart()
+    {
+        EditorSnowballs.Clear();
+        EditorSnowballs.Add(new());
+        CreatingSnowballs = true;
+        Previews.Clear();
+        ChosenPreview = -1;
+        CachedChosenPreview = -1;
+        HoveredPreview = 0;
+    }
+
+    public static void TakeScreenshot()
+    {
+        var screenshot = PlatformSpecific.TakeScreenshotOfGame();
+        if (screenshot.Data != null)
+        {
+            // Dispose of old screenshots
+            GameSprite?.Dispose();
+            GameTexture?.Dispose();
+
+            // Load new screenshot into SFML
+            GameTexture = new Texture(screenshot.Data);
+            GameSprite = new Sprite(GameTexture);
+
+            // Scale screenshot to 640x480
+            GameSprite.Scale = new Vector2f(640f / GameTexture.Size.X, 480f / GameTexture.Size.Y);
+        }
     }
 }

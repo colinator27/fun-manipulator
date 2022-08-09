@@ -47,6 +47,13 @@ public static class PlatformSpecific
             Windows.WinHelpers.MoveWindowToGameWindow(wnd, onlyScale);
     }
 
+    public static bool IsWindowMinimized(IntPtr wnd)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return Windows.WinHelpers.IsWindowMinimized(wnd);
+        return false;
+    }
+
     public static void ToggleWindowMinimized(IntPtr wnd)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -15,19 +15,20 @@
     "SearchRangeFind": 1000000
   },
   "DogiManip": {
-    "ChooseHoveredKey": "A",
-    "ScreenshotKey": "PageUp",
+    "ChooseHoveredKey": "Keyboard:A",
+    "ScreenshotKey": "Keyboard:PageUp",
     "PreviewSelectKeys": [
-      "Num1",
-      "Num2",
-      "Num3",
-      "Num4",
-      "Num5",
-      "Num6"
+      "Keyboard:Num1",
+      "Keyboard:Num2",
+      "Keyboard:Num3",
+      "Keyboard:Num4",
+      "Keyboard:Num5",
+      "Keyboard:Num6"
     ],
-    "MoveToGameKey": "F1",
-    "ToggleMinimizedKey": "F2",
+    "MoveToGameKey": "Keyboard:F1",
+    "ToggleMinimizedKey": "Keyboard:F2",
     "InstructionFilename": "",
+    "TransparentScreenshotAlpha": 120,
     "ScoreMaxDistance": 4,
     "ScoreNumRightBias": 0.25
   },
@@ -41,7 +42,7 @@
   "BeepLateMs": -2,
 
   "WindowScale": 2,
-  "WindowTransparent": false,
+  "WindowTransparent": true,
 
   "Program": "dogimanip"
 }

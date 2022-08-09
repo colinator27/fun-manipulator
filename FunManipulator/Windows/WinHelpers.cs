@@ -55,22 +55,21 @@ public static class WinHelpers
 
     public static void ConfigureAppWindow(IntPtr hWnd)
     {
+        ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+
         if (Config.Instance.WindowTransparent)
         {
-            Rect rect;
-            GetClientRect(hWnd, out rect);
-            int clientWidth = rect.Right - rect.Left;
-            int clientHeight = rect.Bottom - rect.Top;
-
             DWM_BLURBEHIND bb = new();
             bb.dwFlags = DWM_BB.Enable;
             bb.fEnable = true;
             DwmEnableBlurBehindWindow(hWnd, ref bb);
 
-            SetWindowPos(hWnd, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-        }
+            SetWindowPos(hWnd, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
-        SetWindowLongPtr(hWnd, GWL_EXSTYLE, (IntPtr)((GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64() | WS_EX_NOACTIVATE | WS_EX_APPWINDOW)));
+            // Disable minimize/maximize boxes
+            SetWindowLongPtr(hWnd, GWL_STYLE, (IntPtr)((GetWindowLongPtr(hWnd, GWL_STYLE).ToInt64() & ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX))));
+        }
+        SetWindowLongPtr(hWnd, GWL_EXSTYLE, (IntPtr)((GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64() | WS_EX_NOACTIVATE | WS_EX_APPWINDOW | WS_EX_TOPMOST)));
     }
 
     public static void MoveWindowToGameWindow(IntPtr hWnd, bool onlyScale)
@@ -101,12 +100,21 @@ public static class WinHelpers
         SetWindowPos(hWnd, (IntPtr)HWND_TOPMOST, rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top, SWP_NOACTIVATE | (onlyScale ? SWP_NOMOVE : 0));
     }
 
+    public static bool IsWindowMinimized(IntPtr hWnd)
+    {
+        return ((GetWindowLongPtr(hWnd, GWL_STYLE).ToInt64() & WS_MINIMIZE) == WS_MINIMIZE);
+    }
+
     public static void ToggleWindowMinimized(IntPtr hWnd, bool onlyRestore = false)
     {
-        if ((GetWindowLongPtr(hWnd, GWL_STYLE).ToInt64() & WS_MINIMIZE) == WS_MINIMIZE)
+        if (IsWindowMinimized(hWnd))
+        {
+            ShowWindow(hWnd, SW_HIDE);
+            SetWindowLongPtr(hWnd, GWL_EXSTYLE, (IntPtr)(GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64() | WS_EX_NOACTIVATE | WS_EX_APPWINDOW | WS_EX_TOPMOST));
             ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+        }
         else if (!onlyRestore)
-            ShowWindow(hWnd, SW_MINIMIZE);
+            ShowWindow(hWnd, SW_SHOWMINNOACTIVE);
     }
 
     public static void HideConsole()

@@ -60,12 +60,13 @@ namespace FunManipulator
 
         public class DogiManipConfig
         {
-            public Keyboard.Key ChooseHoveredKey { get; set; } = Keyboard.Key.A;
-            public Keyboard.Key ScreenshotKey { get; set; } = Keyboard.Key.PageUp;
-            public Keyboard.Key[] PreviewSelectKeys { get; set; } = { Keyboard.Key.Num1, Keyboard.Key.Num2, Keyboard.Key.Num3, Keyboard.Key.Num4, Keyboard.Key.Num5, Keyboard.Key.Num6 };
-            public Keyboard.Key MoveToGameKey { get; set; } = Keyboard.Key.F1;
-            public Keyboard.Key ToggleMinimizedKey { get; set; } = Keyboard.Key.F2;
+            public Input ChooseHoveredKey { get; set; } = new(Keyboard.Key.A);
+            public Input ScreenshotKey { get; set; } = new(Keyboard.Key.PageUp);
+            public Input[] PreviewSelectKeys { get; set; } = { new(Keyboard.Key.Num1), new(Keyboard.Key.Num2), new(Keyboard.Key.Num3), new(Keyboard.Key.Num4), new(Keyboard.Key.Num5), new(Keyboard.Key.Num6) };
+            public Input MoveToGameKey { get; set; } = new(Keyboard.Key.F1);
+            public Input ToggleMinimizedKey { get; set; } = new(Keyboard.Key.F2);
             public string? InstructionFilename { get; set; } = "instructions.txt";
+            public int TransparentScreenshotAlpha { get; set; } = 120;
             public float ScoreMaxDistance { get; set; } = 4f;
             public float ScoreNumRightBias { get; set; } = 0.25f;
         }
@@ -75,7 +76,7 @@ namespace FunManipulator
             WriteIndented = true,
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
-            Converters = { new JsonStringEnumConverter() },
+            Converters = { new JsonStringEnumConverter(), new InputConverter() },
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
