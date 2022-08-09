@@ -1,9 +1,13 @@
 # FunManipulator
 
 A command-line tool designed for manipulating the RNG used for the "Fun" value in Undertale.
-Default configuration is currently designed for Undertale 1.001 Linux running under Windows GameMaker runner.
+Also contains other tools such as Dogi Manip.
+Default configuration is currently designed for Undertale 1.001 Linux running under the Windows or Linux GameMaker runner.
 
-## How to use
+## How to configure
+You can configure the application to run in different ways (with different features and settings) by editing the config JSON file for your platform.
+
+## How to use Fun Manip
 This section will likely be expanded upon later, but you first supply the fun value range you desire, as the program prompts you.
 It will then wait for you to press spacebar. This is intended for use with Alt+Space buffering, a method used to pause the game, although it is not strictly required.
 

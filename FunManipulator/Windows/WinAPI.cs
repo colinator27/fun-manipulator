@@ -33,7 +33,7 @@ public static class WinAPI
     [DllImport("user32.dll")]
     public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong); 
     [DllImport("user32.dll")]
-    public static extern IntPtr SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+    public static extern IntPtr SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, int wFlags);
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")]

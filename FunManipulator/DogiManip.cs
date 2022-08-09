@@ -346,6 +346,8 @@ public class DogiManip
 
         Console.WriteLine("Initializing window...");
 
+        PlatformSpecific.InitializeWindowing();
+
         // Load mini-preview images
         var previewBackgroundTex = new Texture("dogimanip_bg_preview.png");
         var previewForegroundTex = new Texture("dogimanip_fg_preview.png");
@@ -707,7 +709,7 @@ game at the same time.
     /// </summary>
     private static void LoadData()
     {
-        using FileStream fs = new("dogimanip_snowdata_15bit.bin", FileMode.Open);
+        using FileStream fs = new(Config.Instance.RNG15Bit ? "dogimanip_snowdata_15bit.bin" : "dogimanip_snowdata_16bit.bin", FileMode.Open);
         using BinaryReader br = new(fs);
         while (fs.Position < fs.Length)
         {

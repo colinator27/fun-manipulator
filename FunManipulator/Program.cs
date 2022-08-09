@@ -9,7 +9,7 @@ public class Program
         try
         {
             Console.WriteLine("Loading config...");
-            Config.Load("config.json");
+            Config.Load(PlatformSpecific.GetConfigFileName());
 
             Console.WriteLine("Initializing RNG...");
             RNG.Initialize(Config.Instance.RNG15Bit, Config.Instance.RNGOldPoly);

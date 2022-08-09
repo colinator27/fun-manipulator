@@ -1,0 +1,47 @@
+{
+  "RNG15Bit": false,
+  "RNGOldPoly": false,
+
+  "FunManip": {
+    "ForceFunMinimum": -1,
+    "ForceFunMaximum": -1,
+
+    "FunSearchRange": 5400,
+    "FunSearchOffset": 0
+  },
+  "SeedFinder": {
+    "Seed": -1,
+    "SearchRange": 5000000,
+    "SearchRangeFind": 1000000
+  },
+  "DogiManip": {
+    "ChooseHoveredKey": "A",
+    "ScreenshotKey": "PageUp",
+    "PreviewSelectKeys": [
+      "Num1",
+      "Num2",
+      "Num3",
+      "Num4",
+      "Num5",
+      "Num6"
+    ],
+    "MoveToGameKey": "F1",
+    "ToggleMinimizedKey": "F2",
+    "InstructionFilename": "",
+    "ScoreMaxDistance": 4,
+    "ScoreNumRightBias": 0.25
+  },
+
+  "BeepFilename": "beep.wav",
+  "BeepFrameOffset": -2.5,
+  "BeepMsOffset": 0,
+  "BeepCount": 5,
+  "BeepInterval": 0.3,
+  "BeepEarlyMs": -16,
+  "BeepLateMs": -2,
+
+  "WindowScale": 2,
+  "WindowTransparent": false,
+
+  "Program": "dogimanip"
+}
