@@ -28,4 +28,22 @@ public static class PlatformSpecific
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             Windows.WinHelpers.ConfigureAppWindow(hWnd);
     }
+
+    public static void MoveWindowToGameWindow(IntPtr hWnd, bool onlyScale)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Windows.WinHelpers.MoveWindowToGameWindow(hWnd, onlyScale);
+    }
+
+    public static void ToggleWindowMinimized(IntPtr hWnd)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Windows.WinHelpers.ToggleWindowMinimized(hWnd);
+    }
+
+    public static void HideConsole()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Windows.WinHelpers.HideConsole();
+    }
 }

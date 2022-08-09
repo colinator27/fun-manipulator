@@ -1,6 +1,8 @@
 ﻿using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace FunManipulator;
 
@@ -331,6 +333,7 @@ public class DogiManip
     private static int CachedChosenPreview = -1;
     private static Text? ChosenPreviewInstructionText = null;
     private static Text? ChosenPreviewQuickText = null;
+    private static Dictionary<int, (string, string)> CustomInstructions = new();
 
     // Game screenshot
     private static Texture? GameTexture = null;
@@ -372,6 +375,9 @@ public class DogiManip
         var labelText = new Text("Dogi Manip", Font, 32);
         labelText.FillColor = Color.White;
         labelText.Position = new Vector2f(16, 0);
+
+        // Load instruction text
+        LoadInstructions(Config.Instance.DogiManip.InstructionFilename);
 
         // Begin/helping text
         BeginText = new Text(@$"Place snowballs in the area on
@@ -447,9 +453,10 @@ game at the same time.
         EditorSnowballs.Add(new());
         
         // Initialize window and its settings
-        float windowScale = Config.Instance.DogiManip.WindowScale;
+        float windowScale = Config.Instance.WindowScale;
         var window = new RenderWindow(new VideoMode((uint)(640f * windowScale), (uint)(480f * windowScale)), "Dogi Manip Tool", Styles.Default, new ContextSettings { });
         PlatformSpecific.ConfigureAppWindow(window.SystemHandle);
+        PlatformSpecific.MoveWindowToGameWindow(window.SystemHandle, true);
         window.SetVerticalSyncEnabled(true);
         window.SetView(view);
 
@@ -475,7 +482,12 @@ game at the same time.
             window.SetView(view);
         };
 
+        // Hide console
+        PlatformSpecific.HideConsole();
+        Program.AutoProgressEnding = true;
+
         // Main loop
+        bool minimizeTogglePressed = false;
         while (window.IsOpen)
         {
             if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.ScreenshotKey))
@@ -497,6 +509,23 @@ game at the same time.
                 }
             }
 
+            // Process moving to game window, when window is transparent
+            if (Config.Instance.WindowTransparent)
+            {
+                if (Keyboard.IsKeyPressed(Config.Instance.DogiManip.MoveToGameKey))
+                {
+                    PlatformSpecific.MoveWindowToGameWindow(window.SystemHandle, false);
+                }
+            }
+
+            // Process minimize toggle
+            bool lastMinimizeTogglePressed = minimizeTogglePressed;
+            minimizeTogglePressed = Keyboard.IsKeyPressed(Config.Instance.DogiManip.ToggleMinimizedKey);
+            if (minimizeTogglePressed && !lastMinimizeTogglePressed)
+            {
+                PlatformSpecific.ToggleWindowMinimized(window.SystemHandle);
+            }
+
             // Run window events
             window.DispatchEvents();
 
@@ -504,18 +533,25 @@ game at the same time.
             MousePosition = window.MapPixelToCoords(Mouse.GetPosition(window));
 
             // Draw background
-            renderTex.Clear(Color.Black);
-            if (GameSprite == null)
+            if (Config.Instance.WindowTransparent)
             {
-                // No screenshot, use old method
-                renderTex.Draw(BackgroundSprite);
-                renderTex.Draw(oldOverlaySprite);
+                renderTex.Clear(new Color(0, 0, 0, 0));
             }
             else
             {
-                // Screenshot being used, draw that instead
-                renderTex.Draw(GameSprite);
-                renderTex.Draw(overlaySprite);
+                renderTex.Clear(Color.Black);
+                if (GameSprite == null)
+                {
+                    // No screenshot, use old method
+                    renderTex.Draw(BackgroundSprite);
+                    renderTex.Draw(oldOverlaySprite);
+                }
+                else
+                {
+                    // Screenshot being used, draw that instead
+                    renderTex.Draw(GameSprite);
+                    renderTex.Draw(overlaySprite);
+                }
             }
 
             // Draw snowballs
@@ -544,10 +580,19 @@ game at the same time.
                 bool menuBuffer = (stepCount % 2 == 1);
                 int upDownTimes = 7 + ((stepCount - 220) / 2) + (menuBuffer ? 1 : 0);
 
+                // Generate text only one time to reduce memory allocations
                 if (CachedChosenPreview != ChosenPreview)
                 {
-                    // Generate text only one time to reduce memory allocations
-                    ChosenPreviewInstructionText = new Text($@"Setup instructions
+                    // Check if there's instructions prewritten for this step count
+                    string instructions, quickInstructions;
+                    if (CustomInstructions.TryGetValue(stepCount, out var instruction))
+                    {
+                        instructions = instruction.Item1;
+                        quickInstructions = instruction.Item2;
+                    }
+                    else
+                    {
+                        instructions = $@"Original basic setup
 - Hold right into slope
 - Press up and keep holding right
 - After hitting, release up
@@ -556,10 +601,13 @@ game at the same time.
 {(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
 - Go up/down {upDownTimes} times at bridge
 
-(step count={stepCount})", Font, 16);
+(step count={stepCount})";
+                        quickInstructions = $@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times";
+                    }
+                    ChosenPreviewInstructionText = new Text(instructions, Font, 16);
                     ChosenPreviewInstructionText.Position = new Vector2f(10, 100);
 
-                    ChosenPreviewQuickText = new Text($@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times", Font, 32);
+                    ChosenPreviewQuickText = new Text(quickInstructions, Font, 32);
                     ChosenPreviewQuickText.FillColor = Color.Red;
                     ChosenPreviewQuickText.Position = new Vector2f(10, 320);
 
@@ -627,7 +675,10 @@ game at the same time.
 
             // Final draw to the screen
             renderTex.Display();
-            window.Clear();
+            if (Config.Instance.WindowTransparent)
+                window.Clear(new Color(0, 0, 0, 0));
+            else
+                window.Clear();
             window.Draw(new Sprite(renderTex.Texture));
             window.Display();
 
@@ -793,5 +844,48 @@ game at the same time.
                 row++;
             }
         }
+    }
+
+    private static void LoadInstructions(string? filename)
+    {
+        if (string.IsNullOrEmpty(filename))
+            return;
+
+        string[] lines = File.ReadAllLines(filename);
+
+        StringBuilder sb = new();
+        StringBuilder sbQuick = new();
+        Regex stepRegex = new(@"^\@step\: (\d+)$", RegexOptions.Compiled);
+        Regex quickRegex = new(@"^\@quick\: (.*)$", RegexOptions.Compiled);
+        int currStep = -1;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string currLine = lines[i];
+
+            Match m = stepRegex.Match(currLine);
+            if (m.Success)
+            {
+                if (currStep != -1)
+                    CustomInstructions[currStep] = (sb.ToString().Trim(), sbQuick.ToString().Trim());
+                currStep = int.Parse(m.Groups[1].Value);
+                sb.Clear();
+                sbQuick.Clear();
+                continue;
+            }
+            m = quickRegex.Match(currLine);
+            if (m.Success)
+            {
+                sbQuick.Append(m.Groups[1].Value);
+                sbQuick.AppendLine();
+                continue;
+            }
+
+            sb.Append(currLine);
+            sb.AppendLine();
+        }
+
+        if (currStep != -1)
+            CustomInstructions[currStep] = (sb.ToString().Trim(), sbQuick.ToString().Trim());
     }
 }

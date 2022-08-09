@@ -37,6 +37,9 @@ namespace FunManipulator
         public int BeepEarlyMs { get; set; } = -16;
         public int BeepLateMs { get; set; } = -2;
 
+        public float WindowScale { get; set; } = 2f;
+        public bool WindowTransparent { get; set; } = false;
+
         public string Program { get; set; } = "";
 
         public class FunManipConfig
@@ -57,10 +60,12 @@ namespace FunManipulator
 
         public class DogiManipConfig
         {
-            public float WindowScale { get; set; } = 2f;
             public Keyboard.Key ChooseHoveredKey { get; set; } = Keyboard.Key.A;
             public Keyboard.Key ScreenshotKey { get; set; } = Keyboard.Key.PageUp;
             public Keyboard.Key[] PreviewSelectKeys { get; set; } = { Keyboard.Key.Num1, Keyboard.Key.Num2, Keyboard.Key.Num3, Keyboard.Key.Num4, Keyboard.Key.Num5, Keyboard.Key.Num6 };
+            public Keyboard.Key MoveToGameKey { get; set; } = Keyboard.Key.F1;
+            public Keyboard.Key ToggleMinimizedKey { get; set; } = Keyboard.Key.F2;
+            public string? InstructionFilename { get; set; } = "instructions.txt";
             public float ScoreMaxDistance { get; set; } = 4f;
             public float ScoreNumRightBias { get; set; } = 0.25f;
         }

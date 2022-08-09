@@ -15,7 +15,6 @@
     "SearchRangeFind": 1000000
   },
   "DogiManip": {
-    "WindowScale": 2,
     "ChooseHoveredKey": "A",
     "ScreenshotKey": "PageUp",
     "PreviewSelectKeys": [
@@ -26,6 +25,9 @@
       "Num5",
       "Num6"
     ],
+    "MoveToGameKey": "F1",
+    "ToggleMinimizedKey": "F2",
+    "InstructionFilename": "",
     "ScoreMaxDistance": 4,
     "ScoreNumRightBias": 0.25
   },
@@ -37,6 +39,9 @@
   "BeepInterval": 0.3,
   "BeepEarlyMs": -16,
   "BeepLateMs": -2,
+
+  "WindowScale": 2,
+  "WindowTransparent": false,
 
   "Program": "dogimanip"
 }
