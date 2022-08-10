@@ -530,9 +530,9 @@ game at the same time.
                 if (GameSprite != null)
                 {
                     // Screenshot being used
-                    GameSprite.Color = new Color(255, 255, 255, 160);
+                    GameSprite.Color = new Color(255, 255, 255, (byte)Config.Instance.DogiManip.TransparentScreenshotAlpha);
                     renderTex.Draw(GameSprite);
-                    overlaySprite.Color = new Color(255, 255, 255, 160);
+                    overlaySprite.Color = new Color(255, 255, 255, (byte)Config.Instance.DogiManip.TransparentScreenshotAlpha);
                     renderTex.Draw(overlaySprite);
                 }
             }

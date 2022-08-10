@@ -66,7 +66,7 @@ namespace FunManipulator
             public Input MoveToGameKey { get; set; } = new(Keyboard.Key.F1);
             public Input ToggleMinimizedKey { get; set; } = new(Keyboard.Key.F2);
             public string? InstructionFilename { get; set; } = "instructions.txt";
-            public int TransparentScreenshotAlpha { get; set; } = 120;
+            public int TransparentScreenshotAlpha { get; set; } = 160;
             public float ScoreMaxDistance { get; set; } = 4f;
             public float ScoreNumRightBias { get; set; } = 0.25f;
         }
