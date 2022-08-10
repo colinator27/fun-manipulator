@@ -46,7 +46,7 @@
     <None Update="dogimanip_snowdata_16bit.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="instructions.txt">
+    <None Update="custom_route_instructions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
