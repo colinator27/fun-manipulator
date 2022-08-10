@@ -573,11 +573,7 @@ game at the same time.
 
                 // Draw chosen/final preview
                 var preview = Previews[ChosenPreview];
-
-                // Calculate number of times to go up/down, and whether to menu buffer
                 int stepCount = preview.Seed.StepCount;
-                bool menuBuffer = (stepCount % 2 == 1);
-                int upDownTimes = 7 + ((stepCount - 220) / 2) + (menuBuffer ? 1 : 0);
 
                 // Generate text only one time to reduce memory allocations
                 if (CachedChosenPreview != ChosenPreview)
@@ -591,17 +587,54 @@ game at the same time.
                     }
                     else
                     {
-                        instructions = $@"Original basic setup
+                        // Calculate number of times to go up/down, and whether to menu buffer
+                        bool menuBuffer = (stepCount % 2 == 1);
+                        int upDownTimes = 7 + ((stepCount - 220) / 2) + (menuBuffer ? 1 : 0) + Config.Instance.DogiManip.InstructionStepOffset;
+
+                        // Built-in instructions
+                        if (Config.Instance.DogiManip.InstructionStepOffset == -7)
+                        {
+                            instructions = $@"Modified basic setup
+- Hold right into slope
+- Press up and keep holding right
+- After hitting, hold up and left
+- After hitting, release left and
+   THEN up, then hold right until
+   stuck on wall before bridge
+- Press down to get on bridge
+   (keep holding right){(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
+- Go up/down {upDownTimes} times at bridge
+
+(step count={stepCount})";
+                            if (upDownTimes == 0)
+                                quickInstructions = "NO UP/DOWN";
+                            else
+                                quickInstructions = $@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times";
+                        }
+                        else if (Config.Instance.DogiManip.InstructionStepOffset == 0)
+                        {
+                            instructions = $@"Original basic setup
 - Hold right into slope
 - Press up and keep holding right
 - After hitting, release up
 - Press down to get on bridge
-   (keep holding right)
-{(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
+   (keep holding right){(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
 - Go up/down {upDownTimes} times at bridge
 
 (step count={stepCount})";
-                        quickInstructions = $@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times";
+                            quickInstructions = $@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times";
+                        }
+                        else
+                        {
+                            instructions = $@"I have no idea what setup you're
+doing, but I'm sure it's great!
+
+But at the end:{(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
+- Go up/down {upDownTimes} times at bridge
+
+(step count={stepCount})";
+                            quickInstructions = $@"{(menuBuffer ? "Menu buffer up\n" : "")}Up/down {upDownTimes} times";
+                        }
                     }
                     ChosenPreviewInstructionText = new Text(instructions, Font, 16);
                     ChosenPreviewInstructionText.Position = new Vector2f(10, 100);

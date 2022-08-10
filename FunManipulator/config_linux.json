@@ -28,6 +28,7 @@
     "MoveToGameKey": "Keyboard:F1",
     "ToggleMinimizedKey": "Keyboard:F2",
     "InstructionFilename": "",
+    "InstructionStepOffset": -7,
     "TransparentScreenshotAlpha": 160,
     "ScoreMaxDistance": 4,
     "ScoreNumRightBias": 0.25
