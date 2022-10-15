@@ -1,6 +1,6 @@
 ﻿namespace FunManipulator;
 
-public class RNG
+public sealed class RNG
 {
     public static bool Seeds15Bit { get; private set; }
     public static uint[]? UniqueSeeds { get; private set; }

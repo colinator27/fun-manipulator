@@ -12,6 +12,7 @@ public static class PatternInput
         Console.WriteLine("To enter boolean states, use T/F.");
         Console.WriteLine("To enter greater/lesser than previous, use G/L.");
         Console.WriteLine("To enter unknowns, use U. Use UI for unknown irandom() calls.");
+        Console.WriteLine("To enter new range, enter \"range\".");
         Console.WriteLine("To end, enter \"end\" or \"quit\".");
 
         Search.Pattern pattern = new();
@@ -25,6 +26,13 @@ public static class PatternInput
             line = line.ToLowerInvariant();
             if (line == "end" || line == "quit" || line == "exit")
                 break;
+            if (line == "range")
+            {
+                range = ConsoleHelpers.ReadLineDoubleMin("Enter random() range (>= 0): ", 0);
+                minInclusive = ConsoleHelpers.ReadLineDoubleMin("Enter minimum inclusive value (>= 0): ", 0);
+                maxExclusive = ConsoleHelpers.ReadLineDoubleRange($"Enter maximum exclusive value (in range): ", minInclusive, range);
+                continue;
+            }
             if (line == "t")
             {
                 pattern.Elements.Add(new Search.ElementRandomInRange(range, minInclusive, maxExclusive));

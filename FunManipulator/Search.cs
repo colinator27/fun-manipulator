@@ -4,7 +4,7 @@ namespace FunManipulator;
 
 public static class Search
 {
-    public class Pattern
+    public sealed class Pattern
     {
         public List<IElement> Elements { get; init; }
         public bool AnyOrder { get; set; } = false;
@@ -110,7 +110,7 @@ public static class Search
         public bool Check(uint[] rng, ref int index);
     }
 
-    public class ElementUnknown : IElement
+    public sealed class ElementUnknown : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.Unknown;
         public int GetSize() => (IsIRandom ? 2 : 1);
@@ -129,7 +129,7 @@ public static class Search
         }
     }
 
-    public class ElementRandomInRange : IElement
+    public sealed class ElementRandomInRange : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.RandomInRange;
         public int GetSize() => 1;
@@ -157,7 +157,7 @@ public static class Search
         }
     }
 
-    public class ElementIRandomInRange : IElement
+    public sealed class ElementIRandomInRange : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.IRandomInRange;
         public int GetSize() => 2;
@@ -193,7 +193,7 @@ public static class Search
         }
     }
 
-    public class ElementRandomRangeInRange : IElement
+    public sealed class ElementRandomRangeInRange : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.RandomRangeInRange;
         public int GetSize() => 1;
@@ -221,7 +221,7 @@ public static class Search
         }
     }
 
-    public class ElementIRandomRangeInRange : IElement
+    public sealed class ElementIRandomRangeInRange : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.IRandomInRange;
         public int GetSize() => 2;
@@ -254,7 +254,7 @@ public static class Search
         }
     }
 
-    public class ElementChooseIndex : IElement
+    public sealed class ElementChooseIndex : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.ChooseIndex;
         public int GetSize() => 1;
@@ -287,7 +287,7 @@ public static class Search
     }
 
     // Note: only works for random()
-    public class ElementGreaterThanPrevious : IElement
+    public sealed class ElementGreaterThanPrevious : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.GreaterThanPrevious;
         public int GetSize() => 1;
@@ -303,7 +303,7 @@ public static class Search
     }
 
     // Note: only works for random()
-    public class ElementLesserThanPrevious : IElement
+    public sealed class ElementLesserThanPrevious : IElement
     {
         public ElementKind Kind { get; init; } = ElementKind.LesserThanPrevious;
         public int GetSize() => 1;
