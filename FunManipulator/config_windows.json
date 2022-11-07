@@ -33,6 +33,9 @@
     "ScoreMaxDistance": 4,
     "ScoreNumRightBias": 0.25
   },
+  "ScreenshotTool": {
+    "TransparentScreenshotAlpha": 160
+  },
 
   "BeepFilename": "beep.wav",
   "BeepFrameOffset": -2.5,

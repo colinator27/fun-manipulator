@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace FunManipulator;
 
@@ -6,6 +7,7 @@ public static class Search
 {
     public sealed class Pattern
     {
+        public Pattern? Parent { get; set; } = null; 
         public List<IElement> Elements { get; init; }
         public bool AnyOrder { get; set; } = false;
         public int AllowedErrors { get; set; } = 0;
@@ -99,7 +101,9 @@ public static class Search
         IRandomRangeInRange,
         ChooseIndex,
         GreaterThanPrevious,
-        LesserThanPrevious
+        LesserThanPrevious,
+        LaterPattern,
+        Skip
     }
 
     public interface IElement
@@ -125,6 +129,28 @@ public static class Search
         public bool Check(uint[] rng, ref int index)
         {
             index += (IsIRandom ? 2 : 1);
+            return true;
+        }
+    }
+
+    public sealed class ElementSkip : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.Skip;
+        public int GetSize() => Amount;
+
+        public int Amount { get; init; }
+
+        public ElementSkip(int amount)
+        {
+            Amount = amount;
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            if (index + Amount > rng.Length)
+                return false;
+
+            index += Amount;
             return true;
         }
     }
@@ -315,6 +341,28 @@ public static class Search
             bool isLesser = rng[index] < rng[index - 1];
             index++;
             return isLesser;
+        }
+    }
+
+    public sealed class ElementLaterPattern : IElement
+    {
+        public ElementKind Kind { get; init; } = ElementKind.LaterPattern;
+        public int GetSize() => _size;
+
+        public Pattern Pattern { get; init; }
+        public int SearchRange { get; init; }
+        private int _size { get; init; }
+
+        public ElementLaterPattern(Pattern pattern, int searchRange = 5000)
+        {
+            Pattern = pattern;
+            SearchRange = searchRange;
+            _size = pattern.GetSize();
+        }
+
+        public bool Check(uint[] rng, ref int index)
+        {
+            return Pattern.CheckFirst(rng, index, Math.Min(index + SearchRange, rng.Length - _size)) != -1;
         }
     }
 

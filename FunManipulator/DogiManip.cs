@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace FunManipulator;
 
-public class DogiManip
+public class DogiManip : GUITool
 {
     private class Seed
     {
@@ -177,84 +177,6 @@ public class DogiManip
         }
     }
 
-    private abstract class Button
-    {
-        private RectangleShape shape { get; init; }
-        public Color NormalColor { get; set; } = Color.Black;
-        public Color HoverColor { get; set; } = new Color(100, 100, 100);
-        public Color PressColor { get; set; } = new Color(200, 200, 200);
-        public Color OutlineColor { get; set; } = new Color(80, 80, 80);
-        public int OutlineThickness { get; set; } = 1;
-        protected bool IsHovered { get; private set; } = false;
-
-        public Button(float x, float y, float width, float height)
-        {
-            // Make rectangle
-            shape = new RectangleShape(new Vector2f(width, height));
-            shape.Position = new Vector2f(x, y);
-        }
-
-        public virtual void Update(RenderTexture texture)
-        {
-            // Update color, process clicks
-            IsHovered = (MousePosition.X >= shape.Position.X &&
-                         MousePosition.Y >= shape.Position.Y &&
-                         MousePosition.X <= shape.Position.X + shape.Size.X &&
-                         MousePosition.Y <= shape.Position.Y + shape.Size.Y);
-            Color color;
-            if (IsHovered)
-            {
-                if (MouseLJustReleased)
-                    OnClick();
-
-                if (Mouse.IsButtonPressed(Mouse.Button.Left))
-                    color = PressColor;
-                else
-                    color = HoverColor;
-            }
-            else
-            {
-                color = NormalColor;
-            }
-            shape.FillColor = color;
-            shape.OutlineColor = OutlineColor;
-            shape.OutlineThickness = OutlineThickness;
-
-            texture.Draw(shape);
-        }
-
-        public abstract void OnClick();
-    }
-
-    private class TextButton : Button
-    {
-        private Text text { get; init; }
-        public Action ActionOnClick { get; set; }
-
-        public TextButton(float x, float y, float width, float height, string text, Action onClick) : base(x, y, width, height)
-        {
-            // Create text
-            this.text = new Text(text, Font, 16);
-            this.text.FillColor = Color.White;
-            this.text.Position = new Vector2f(x + 4, y - 2);
-
-            ActionOnClick = onClick;
-        }
-
-        public override void Update(RenderTexture texture)
-        {
-            base.Update(texture);
-
-            texture.Draw(text);
-        }
-
-        public override void OnClick()
-        {
-            // Perform desired action
-            ActionOnClick();
-        }
-    }
-
     private class PreviewButton : Button
     {
         public RenderTexture RenderTexture { get; init; }
@@ -304,22 +226,21 @@ public class DogiManip
     // The view that the game should be at
     private const float ViewX = 0, ViewY = 580 - 240;
 
-    // Mouse states
-    private static Vector2f MousePosition = new Vector2f(0, 0);
-    private static bool MouseLJustPressed = false;
-    private static bool MouseLJustReleased = false;
-    private static bool MouseRJustPressed = false;
-    private static bool MouseRJustReleased = false;
-
     // Seeds and the matching previews discovered
     private static readonly List<Seed> Seeds = new();
     private static List<PreviewButton> Previews = new();
 
     // Misc. assets
+    private static Texture? BackgroundSpriteTex;
+    private static Texture? PreviewBackgroundTex;
+    private static Texture? PreviewForegroundTex;
+    private static Texture? OverlayTex;
+    private static Texture? OldOverlayTex;
     private static Sprite? BackgroundSprite;
     private static Sprite? PreviewBackgroundLayer;
     private static Sprite? PreviewForegroundLayer;
-    private static Font? Font;
+    private static Sprite? OverlaySprite;
+    private static Sprite? OldOverlaySprite;
 
     // Editing states
     private static readonly List<EditorSnowball> EditorSnowballs = new();
@@ -339,39 +260,45 @@ public class DogiManip
     private static Texture? GameTexture = null;
     private static Sprite? GameSprite = null;
 
+    private static bool LoadedDataYet = false;
+
     public static void Run()
     {
         Console.WriteLine("Loading data...");
-        LoadData();
+        if (!LoadedDataYet)
+            LoadData();
 
         Console.WriteLine("Initializing window...");
 
         PlatformSpecific.InitializeWindowing();
 
-        // Load mini-preview images
-        var previewBackgroundTex = new Texture("dogimanip_bg_preview.png");
-        var previewForegroundTex = new Texture("dogimanip_fg_preview.png");
-        PreviewBackgroundLayer = new Sprite(previewBackgroundTex);
-        PreviewForegroundLayer = new Sprite(previewForegroundTex);
+        if (!LoadedDataYet)
+        {
+            // Load mini-preview images
+            PreviewBackgroundTex = new Texture("dogimanip_bg_preview.png");
+            PreviewForegroundTex = new Texture("dogimanip_fg_preview.png");
+            PreviewBackgroundLayer = new Sprite(PreviewBackgroundTex);
+            PreviewForegroundLayer = new Sprite(PreviewForegroundTex);
 
-        // Load old overlay and background images
-        var bgImage = new Texture("dogimanip_bg.png");
-        BackgroundSprite = new Sprite(bgImage);
-        var oldOverlayImage = new Texture("dogimanip_old_overlay.png");
-        var oldOverlaySprite = new Sprite(oldOverlayImage);
-        oldOverlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
+            // Load old overlay and background images
+            BackgroundSpriteTex = new Texture("dogimanip_bg.png");
+            BackgroundSprite = new Sprite(BackgroundSpriteTex);
+            OldOverlayTex = new Texture("dogimanip_old_overlay.png");
+            OldOverlaySprite = new Sprite(OldOverlayTex);
+            OldOverlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
 
-        // Load overlay image
-        var overlayImage = new Texture("dogimanip_overlay.png");
-        var overlaySprite = new Sprite(overlayImage);
-        overlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
+            // Load overlay image
+            OverlayTex = new Texture("dogimanip_overlay.png");
+            OverlaySprite = new Sprite(OverlayTex);
+            OverlaySprite.Color = new Color(0xff, 0xff, 0xff, 80);
+
+            // Load font
+            Font = new Font("8bitoperator_jve.ttf");
+        }
 
         // Make dark rectangle on left side of the screen
         var overlayRectangle = new RectangleShape(new Vector2f(240, 480));
         overlayRectangle.FillColor = new Color(0, 0, 0, 150);
-
-        // Load font
-        Font = new Font("8bitoperator_jve.ttf");
 
         // Title in top left
         var labelText = new Text("Dogi Manip", Font, 32);
@@ -379,7 +306,8 @@ public class DogiManip
         labelText.Position = new Vector2f(16, 0);
 
         // Load instruction text
-        LoadInstructions(Config.Instance.DogiManip.InstructionFilename);
+        if (!LoadedDataYet)
+            LoadInstructions(Config.Instance.DogiManip.InstructionFilename);
 
         // Begin/helping text
         BeginText = new Text(@$"Place snowballs in the area on
@@ -412,37 +340,7 @@ game at the same time.
             Restart();
         });
 
-        // Set up view and render texture for window
         // We want to draw to a 640x480 canvas, not whatever gets scaled to
-        var view = new View();
-        view.Size = new Vector2f(640, 480);
-        view.Center = new Vector2f(320, 240);
-        void updateView(uint width, uint height)
-        {
-            // Create black bars when resized
-            const float viewRatio = 640f / 480f;
-            float windowRatio = width / (float)height;
-            float posX = 0;
-            float posY = 0;
-            float sizeX = 1;
-            float sizeY = 1;
-
-            if (windowRatio >= viewRatio)
-            {
-                // Horizontal spacing
-                sizeX = viewRatio / windowRatio;
-                posX = (1 - sizeX) / 2f;
-            }
-            else
-            {
-                // Vertical spacing
-                sizeY = windowRatio / viewRatio;
-                posY = (1 - sizeY) / 2f;
-            }
-
-            view.Viewport = new FloatRect(posX, posY, sizeX, sizeY);
-        }
-        updateView(640, 480);
         var renderTex = new RenderTexture(640, 480);
 
         // Always start with one snowball
@@ -453,34 +351,25 @@ game at the same time.
         var window = new RenderWindow(new VideoMode((uint)(640f * windowScale), (uint)(480f * windowScale)), "Dogi Manip Tool", Styles.Default, new ContextSettings { });
         PlatformSpecific.ConfigureAppWindow(window.SystemHandle);
         PlatformSpecific.MoveWindowToGameWindow(window.SystemHandle, true);
-        window.SetVerticalSyncEnabled(true);
-        window.SetView(view);
+        ConfigureWindow(window);
+        ConfigureView(window, 640, 480);
 
-        // Window event handling
-        window.Closed += (ev, args) => window.Close();
-        window.MouseButtonPressed += (ev, args) =>
+        /*
+        // Create Screenshot Tool button
+        var screenshotToolButton = new TextButton(200, 50, 20, 20, "S", () =>
         {
-            if (args.Button == Mouse.Button.Left)
-                MouseLJustPressed = true;
-            else if (args.Button == Mouse.Button.Right)
-                MouseRJustPressed = true;
-        };
-        window.MouseButtonReleased += (ev, args) =>
-        {
-            if (args.Button == Mouse.Button.Left)
-                MouseLJustReleased = true;
-            else if (args.Button == Mouse.Button.Right)
-                MouseRJustReleased = true;
-        };
-        window.Resized += (ev, args) =>
-        {
-            updateView(args.Width, args.Height);
-            window.SetView(view);
-        };
+            Restart();
+            window.Close();
+            Program.NextProgramToRun = "Screenshot";
+        });
+        */
 
         // Hide console
         PlatformSpecific.HideConsole();
         Program.AutoProgressEnding = true;
+
+        // Mark all data as loaded now
+        LoadedDataYet = true;
 
         // Main loop
         bool minimizeTogglePressed = false;
@@ -517,11 +406,8 @@ game at the same time.
                 PlatformSpecific.ToggleWindowMinimized(window.SystemHandle);
             }
 
-            // Run window events
-            window.DispatchEvents();
-
-            // Update mouse position
-            MousePosition = window.MapPixelToCoords(Mouse.GetPosition(window));
+            // Update window I/O
+            EarlyUpdateWindow(window);
 
             // Draw background
             if (Config.Instance.WindowTransparent)
@@ -532,8 +418,11 @@ game at the same time.
                     // Screenshot being used
                     GameSprite.Color = new Color(255, 255, 255, (byte)Config.Instance.DogiManip.TransparentScreenshotAlpha);
                     renderTex.Draw(GameSprite);
-                    overlaySprite.Color = new Color(255, 255, 255, (byte)Config.Instance.DogiManip.TransparentScreenshotAlpha);
-                    renderTex.Draw(overlaySprite);
+                    if (OverlaySprite != null)
+                    {
+                        OverlaySprite.Color = new Color(255, 255, 255, (byte)Config.Instance.DogiManip.TransparentScreenshotAlpha);
+                        renderTex.Draw(OverlaySprite);
+                    }
                 }
             }
             else
@@ -543,13 +432,13 @@ game at the same time.
                 {
                     // No screenshot, use old method
                     renderTex.Draw(BackgroundSprite);
-                    renderTex.Draw(oldOverlaySprite);
+                    renderTex.Draw(OldOverlaySprite);
                 }
                 else
                 {
                     // Screenshot being used, draw that instead
                     renderTex.Draw(GameSprite);
-                    renderTex.Draw(overlaySprite);
+                    renderTex.Draw(OverlaySprite);
                 }
             }
 
@@ -565,6 +454,9 @@ game at the same time.
 
             // Draw buttons
             restartButton.Update(renderTex);
+            /*
+            screenshotToolButton.Update(renderTex);
+            */
 
             if (ChosenPreview != -1 && /* just in case there's an error */ ChosenPreview < Previews.Count)
             {
@@ -714,11 +606,8 @@ But at the end:{(menuBuffer ? "\n- On bridge, menu buffer up once" : "")}
             window.Draw(new Sprite(renderTex.Texture));
             window.Display();
 
-            // Clear mouse states
-            MouseLJustPressed = false;
-            MouseLJustReleased = false;
-            MouseRJustPressed = false;
-            MouseRJustReleased = false;
+            // Update window I/O
+            LateUpdateWindow();
 
             // Remove snowballs that are marked to be deleted
             bool doNewSearch = (EditorSnowballsToDelete.Count != 0);

@@ -28,6 +28,7 @@ namespace FunManipulator
         public FunManipConfig FunManip { get; set; } = new();
         public SeedFinderConfig SeedFinder { get; set; } = new();
         public DogiManipConfig DogiManip { get; set; } = new();
+        public ScreenshotToolConfig ScreenshotTool { get; set; } = new();
 
         public string BeepFilename { get; set; } = "beep.wav";
         public double BeepFrameOffset { get; set; } = -4;
@@ -70,6 +71,11 @@ namespace FunManipulator
             public int TransparentScreenshotAlpha { get; set; } = 160;
             public float ScoreMaxDistance { get; set; } = 4f;
             public float ScoreNumRightBias { get; set; } = 0.25f;
+        }
+
+        public class ScreenshotToolConfig
+        {
+            public int TransparentScreenshotAlpha { get; set; } = 160;
         }
 
         public static JsonSerializerOptions JsonOptions = new()

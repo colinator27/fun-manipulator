@@ -13,9 +13,12 @@ public static class PatternInput
         Console.WriteLine("To enter greater/lesser than previous, use G/L.");
         Console.WriteLine("To enter unknowns, use U. Use UI for unknown irandom() calls.");
         Console.WriteLine("To enter new range, enter \"range\".");
+        Console.WriteLine("To enter later pattern, enter \"later\", with opt. search range.");
+        Console.WriteLine("To enter chain of unknowns, enter \"skip\" with number of calls.");
         Console.WriteLine("To end, enter \"end\" or \"quit\".");
 
-        Search.Pattern pattern = new();
+        Search.Pattern rootPattern = new();
+        Search.Pattern pattern = rootPattern;
         while (true)
         {
             string line = Console.ReadLine()?.Trim() ?? "";
@@ -25,7 +28,15 @@ public static class PatternInput
                 continue;
             line = line.ToLowerInvariant();
             if (line == "end" || line == "quit" || line == "exit")
-                break;
+            {
+                if (pattern.Parent != null)
+                {
+                    pattern = pattern.Parent;
+                    continue;
+                }
+                else
+                    break;
+            }
             if (line == "range")
             {
                 range = ConsoleHelpers.ReadLineDoubleMin("Enter random() range (>= 0): ", 0);
@@ -63,6 +74,23 @@ public static class PatternInput
                 pattern.Elements.Add(new Search.ElementLesserThanPrevious());
                 continue;
             }
+            if (line == "later")
+            {
+                pattern = new Search.Pattern() { Parent = pattern };
+                if (int.TryParse(line[5..], out int searchRange))
+                    pattern.Elements.Add(new Search.ElementLaterPattern(pattern, searchRange));
+                else
+                    pattern.Elements.Add(new Search.ElementLaterPattern(pattern));
+                continue;
+            }
+            if (line == "skip")
+            {
+                if (int.TryParse(line[4..], out int amount))
+                {
+                    pattern.Elements.Add(new Search.ElementSkip(amount));
+                    continue;
+                }
+            }
             if (double.TryParse(line, out double val))
             {
                 if (val < 0 || val > range)
@@ -79,6 +107,6 @@ public static class PatternInput
             Console.WriteLine("Warning: Invalid format, ignoring.");
         }
 
-        return pattern;
+        return rootPattern;
     }
 }
