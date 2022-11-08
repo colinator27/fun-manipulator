@@ -1,4 +1,6 @@
-﻿namespace FunManipulator;
+﻿using System.Runtime.CompilerServices;
+
+namespace FunManipulator;
 
 public sealed class RNG
 {
@@ -45,6 +47,7 @@ public sealed class RNG
             RandomPoly = 0xda442d24u;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (long, long) GetRange(double range, double minInclusive, double maxExclusive)
     {
         if (range != 1)
@@ -55,9 +58,16 @@ public sealed class RNG
         return ((long)(minInclusive * ((long)uint.MaxValue + 1)), (long)(maxExclusive * ((long)uint.MaxValue + 1)));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double ValueToDouble(uint val, double range)
     {
         return val * 2.328306436538696e-10 * range;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float ValueToSingle(uint val, float range)
+    {
+        return val * 2.328306436538696e-10f * range;
     }
 
     public uint[] State { get; set; }
@@ -97,6 +107,7 @@ public sealed class RNG
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint Next()
     {
         // Advance random state as per WELL512a
@@ -113,6 +124,7 @@ public sealed class RNG
         return State[Index];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double NextDouble(double range)
     {
         return Next() * 2.328306436538696e-10 * range;

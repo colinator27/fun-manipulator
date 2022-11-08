@@ -1,6 +1,7 @@
 {
   "RNG15Bit": true,
   "RNGOldPoly": false,
+  "LogProgress": false,
 
   "FunManip": {
     "ForceFunMinimum": -1,

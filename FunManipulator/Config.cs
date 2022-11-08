@@ -24,6 +24,7 @@ namespace FunManipulator
 
         public bool RNG15Bit { get; set; } = true;
         public bool RNGOldPoly { get; set; } = false;
+        public bool LogProgress { get; set; } = false;
 
         public FunManipConfig FunManip { get; set; } = new();
         public SeedFinderConfig SeedFinder { get; set; } = new();

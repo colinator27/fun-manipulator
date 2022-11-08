@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace FunManipulator;
 
-public static class Search
+public static partial class Search
 {
-    public sealed class Pattern
+    public sealed partial class Pattern
     {
         public Pattern? Parent { get; set; } = null; 
         public List<IElement> Elements { get; init; }
@@ -103,7 +103,10 @@ public static class Search
         GreaterThanPrevious,
         LesserThanPrevious,
         LaterPattern,
-        Skip
+        Skip,
+
+        // Extended
+        ExtLastDustFrame,
     }
 
     public interface IElement
@@ -385,10 +388,16 @@ public static class Search
         bool foundSeed = false;
         bool foundExtraSeeds = false;
 
+        bool logProgress = Config.Instance.LogProgress;
+        if (logProgress)
+            Console.Write("Seed search progress: 0%");
+
         // Split the work of all the seeds into separate threads
         // Do it in chunks to reduce large memory allocations
         var rangePartitioner = Partitioner.Create(0, RNG.UniqueSeeds?.Length ?? throw new Exception("RNG not initialized"));
         object _lock = new();
+        object _counterLock = new();
+        int counter = 0;
         Parallel.ForEach(rangePartitioner, new ParallelOptions { MaxDegreeOfParallelism = Parallelism }, range =>
         {
             uint[] simulated = new uint[searchSize];
@@ -428,8 +437,21 @@ public static class Search
                         }
                     }
                 }
+
+                // Log progress
+                if (logProgress)
+                {
+                    lock (_counterLock)
+                    {
+                        counter++;
+                        Console.Write($"\rSeed search progress: {((float)counter / RNG.UniqueSeeds.Length) * 100:N2}%");
+                    }
+                }
             }
         });
+
+        if (logProgress)
+            Console.WriteLine();
 
         if (foundSeed && !foundExtraSeeds)
         {
