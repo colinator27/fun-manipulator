@@ -14,7 +14,12 @@
   "SeedFinder": {
     "Seed": -1,
     "SearchRange": 5000000,
-    "SearchRangeFind": 1000000
+    "SearchRangeFind": 1000000,
+    "InputMode": "None",
+    "DefaultDustID": 0,
+    "DefaultFrame": -1,
+    "DefaultDustX": 415,
+    "DefaultDustY": 120
   },
   "DogiManip": {
     "ChooseHoveredKey": "Keyboard:A",
@@ -46,6 +51,9 @@
   "BeepInterval": 0.3,
   "BeepEarlyMs": -16,
   "BeepLateMs": -2,
+
+  "NamingSearchStart": 0,
+  "NamingSearchRange": 40000,
 
   "WindowScale": 2,
   "WindowTransparent": false,

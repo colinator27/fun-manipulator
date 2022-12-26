@@ -66,7 +66,8 @@ public class NamingLetters
             }
 
             Console.WriteLine("Searching for seed...");
-            if (!Search.TryFindSeedWithinRange(pattern, 0, 40000, out seed, out pos))
+            if (!Search.TryFindSeedWithinRange(pattern, Config.Instance.NamingSearchStart, 
+                                               Config.Instance.NamingSearchRange, out seed, out pos))
             {
                 Console.WriteLine("Unable to find individual seed with the pattern.");
                 Console.WriteLine("Retry? Press Y or N.");

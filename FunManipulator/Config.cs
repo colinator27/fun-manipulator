@@ -40,6 +40,9 @@ namespace FunManipulator
         public int BeepEarlyMs { get; set; } = -16;
         public int BeepLateMs { get; set; } = -2;
 
+        public int NamingSearchStart { get; set; } = 0;
+        public int NamingSearchRange { get; set; } = 40000;
+
         public float WindowScale { get; set; } = 2f;
         public bool WindowTransparent { get; set; } = false;
 
@@ -59,6 +62,18 @@ namespace FunManipulator
             public long Seed { get; set; } = -1;
             public int SearchRange { get; set; } = 5000000;
             public int SearchRangeFind { get; set; } = 500000;
+            public PatternInputMode InputMode { get; set; } = PatternInputMode.None;
+            public int DefaultDustID { get; set; } = 0;
+            public int DefaultFrame { get; set; } = -1;
+            public int DefaultDustX { get; set; } = 415;
+            public int DefaultDustY { get; set; } = 120;
+
+            public enum PatternInputMode
+            {
+                None,
+                Basic,
+                Dust
+            }
         }
 
         public class DogiManipConfig

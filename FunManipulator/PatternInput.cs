@@ -1,7 +1,50 @@
-﻿namespace FunManipulator;
+﻿using System.Text.RegularExpressions;
+
+namespace FunManipulator;
 
 public static class PatternInput
 {
+    public static Search.Pattern ConfigInputMode()
+    {
+        var mode = Config.Instance.SeedFinder.InputMode;
+
+        if (mode == Config.SeedFinderConfig.PatternInputMode.None)
+        {
+            // Allow user to select a mode
+            Console.WriteLine("Available input modes:");
+            Console.WriteLine(" - basic");
+            Console.WriteLine(" - dust");
+            Console.Write("Please input mode: ");
+            while (mode == Config.SeedFinderConfig.PatternInputMode.None)
+            {
+                string? str = Console.ReadLine();
+                if (str != null)
+                {
+                    switch (str.ToLowerInvariant())
+                    {
+                        case "basic":
+                            mode = Config.SeedFinderConfig.PatternInputMode.Basic;
+                            break;
+                        case "dust":
+                            mode = Config.SeedFinderConfig.PatternInputMode.Dust;
+                            break;
+                        default:
+                            Console.WriteLine("Invalid option. Defaulting to basic.");
+                            mode = Config.SeedFinderConfig.PatternInputMode.Basic;
+                            break;
+                    }
+                }
+            }
+        }
+
+        // Return proper pattern
+        return mode switch
+        {
+            Config.SeedFinderConfig.PatternInputMode.Dust => DustPattern(),
+            _ => Basic(),
+        };
+    }
+
     public static Search.Pattern Basic()
     {
         double range = ConsoleHelpers.ReadLineDoubleMin("Enter random() range (>= 0): ", 0);
@@ -15,7 +58,7 @@ public static class PatternInput
         Console.WriteLine("To enter new range, enter \"range\".");
         Console.WriteLine("To enter later pattern, enter \"later\", with opt. search range.");
         Console.WriteLine("To enter chain of unknowns, enter \"skip\" with number of calls.");
-        Console.WriteLine("To end, enter \"end\" or \"quit\".");
+        Console.WriteLine("To end, enter \"end\", \"quit\", or \"exit\".");
 
         Search.Pattern rootPattern = new();
         Search.Pattern pattern = rootPattern;
@@ -108,5 +151,95 @@ public static class PatternInput
         }
 
         return rootPattern;
+    }
+
+    private static Regex _dustPatternRegex = new(@"(\d+) (\d+)");
+    public static Search.Pattern DustPattern()
+    {
+        Search.Pattern res = new();
+
+        Console.Write($"Enter dust ID (default {Config.Instance.SeedFinder.DefaultDustID}): ");
+        if (!int.TryParse(Console.ReadLine(), out int dustId))
+            dustId = 31;
+
+        Console.Write($"Enter dust frame (default {Config.Instance.SeedFinder.DefaultFrame}): ");
+        if (!int.TryParse(Console.ReadLine(), out int dustFrame))
+            dustFrame = -1;
+
+        Console.Write($"Enter dust X offset (default {Config.Instance.SeedFinder.DefaultDustX}): ");
+        if (!int.TryParse(Console.ReadLine(), out int dustXOffset))
+            dustXOffset = Config.Instance.SeedFinder.DefaultDustX;
+        Console.Write($"Enter dust Y offset (default {Config.Instance.SeedFinder.DefaultDustY}): ");
+        if (!int.TryParse(Console.ReadLine(), out int dustYOffset))
+            dustYOffset = Config.Instance.SeedFinder.DefaultDustY;
+
+        if (dustId < 0 || dustId > DustParticles.Images.Count)
+        {
+            Console.WriteLine("Invalid dust ID. Using default...");
+            dustId = Config.Instance.SeedFinder.DefaultDustID;
+        }
+
+        DustImage image = DustParticles.Images[dustId];
+
+        if (dustFrame < 0 || dustFrame > image.Frames.Count)
+        {
+            Console.WriteLine("Invalid dust frame. Using default...");
+            dustFrame = Config.Instance.SeedFinder.DefaultFrame;
+        }
+
+        DustFrame frame;
+        if (dustFrame <= -1)
+        {
+            // Find last non-empty frame by default
+            int i = image.Frames.Count - 1;
+            do
+            {
+                frame = image.Frames[i];
+                i--;
+            }
+            while (i > 0 && frame.Particles.Count == 0);
+
+            // For every integer less than -1, go back an extra frame
+            i -= Math.Abs(dustFrame) - 1;
+            if (i < 0)
+                frame = image.Frames[0];
+            else
+                frame = image.Frames[i];
+        }
+        else
+        {
+            frame = image.Frames[dustFrame];
+        }
+
+        Console.WriteLine("Enter X/Y positions of each dust particle, one line at a time, separated with spaces.");
+        Console.WriteLine("To end, enter \"end\", \"quit\", or \"exit\".");
+
+        List<DustParticle> recordedParticles = new();
+        while (true)
+        {
+            string line = Console.ReadLine()?.Trim() ?? "";
+            if (line.Contains(';'))
+                line = line[..line.IndexOf(';')];
+            if (string.IsNullOrEmpty(line))
+                continue;
+            line = line.ToLowerInvariant();
+            if (line == "end" || line == "quit" || line == "exit")
+                break;
+            Match match = _dustPatternRegex.Match(line);
+            if (match.Success)
+            {
+                if (int.TryParse(match.Groups[1].Value, out int x) &&
+                    int.TryParse(match.Groups[2].Value, out int y))
+                {
+                    recordedParticles.Add(new(x - dustXOffset, y - dustYOffset, 1));
+                    continue;
+                }
+            }
+            Console.WriteLine("Invalid input; ignoring.");
+        }
+
+        res.Elements.Add(new Search.ElementExtLastDustFrame(frame.Particles, recordedParticles));
+
+        return res;
     }
 }

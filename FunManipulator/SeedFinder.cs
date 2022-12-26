@@ -27,7 +27,7 @@ public static class SeedFinder
                 else
                 {
                     Console.WriteLine("Searching for seeds...");
-                    Search.Pattern pattern = PatternInput.Basic();
+                    Search.Pattern pattern = PatternInput.ConfigInputMode();
                     List<(uint, int)> seedList = new();
                     if (!Search.TryFindSeedWithinRange(pattern, 0, Config.Instance.SeedFinder.SearchRangeFind, out seed, out int pos, seedList))
                     {
@@ -54,7 +54,7 @@ public static class SeedFinder
             if (!ConsoleHelpers.ReadYesNo("Verify a pattern?"))
                 break;
 
-            Search.Pattern pattern = PatternInput.Basic();
+            Search.Pattern pattern = PatternInput.ConfigInputMode();
 
             Console.WriteLine("Searching...");
             List<int> pos = Search.TryFindPattern(seed, pattern, 0, Config.Instance.SeedFinder.SearchRange);

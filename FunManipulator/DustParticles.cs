@@ -1,6 +1,32 @@
 ﻿using System;
 namespace FunManipulator;
 
+public static class DustParticles
+{
+    private static List<DustImage>? _images = null;
+    public static List<DustImage> Images { get => LoadImages(); }
+
+    private static List<DustImage> LoadImages()
+    {
+        if (_images != null)
+            return _images;
+
+        _images = new List<DustImage>();
+        using (BinaryReader br = new(new FileStream("dust_data.bin", FileMode.Open)))
+        {
+            int count = br.ReadUInt16();
+            _images.EnsureCapacity(count);
+            for (int i = 0; i < count; i++)
+            {
+                DustImage image = new();
+                image.Load(br);
+                _images.Add(image);
+            }
+        }
+        return _images;
+    }
+}
+
 public struct DustParticle
 {
     public float X;
