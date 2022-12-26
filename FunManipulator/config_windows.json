@@ -1,6 +1,7 @@
 {
   "RNG15Bit": true,
   "RNGOldPoly": false,
+  "RNGSigned": false,
   "LogProgress": false,
 
   "FunManip": {

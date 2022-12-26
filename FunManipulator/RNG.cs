@@ -5,15 +5,17 @@ namespace FunManipulator;
 public sealed class RNG
 {
     public static bool Seeds15Bit { get; private set; }
+    public static bool SeedsSigned { get; private set; }
     public static uint[]? UniqueSeeds { get; private set; }
     public static uint RandomPoly { get; private set; }
 
-    public static void Initialize(bool is15bit = true, bool useOldPoly = false)
+    public static void Initialize(bool is15bit = true, bool useOldPoly = false, bool signed = false)
     {
         Seeds15Bit = is15bit;
+        SeedsSigned = signed;
 
         // Build unique seed array
-        HashSet<ushort> uniqueStates = new();
+        HashSet<uint> uniqueStates = new();
         if (Seeds15Bit)
         {
             UniqueSeeds = new uint[32768];
@@ -22,6 +24,19 @@ public sealed class RNG
             while (uniqueStates.Count < 32768)
             {
                 ushort state = (ushort)((((i * 0x343fd) + 0x269ec3) >> 16) & 0x7fff);
+                if (uniqueStates.Add(state))
+                    UniqueSeeds[j++] = i;
+                i++;
+            }
+        }
+        else if (SeedsSigned)
+        {
+            UniqueSeeds = new uint[65536];
+            uint i = 0;
+            int j = 0;
+            while (uniqueStates.Count < 65536)
+            {
+                uint state = (uint)(((((int)i * 0x343fd) + 0x269ec3) >> 16) & 0x7fffffff);
                 if (uniqueStates.Add(state))
                     UniqueSeeds[j++] = i;
                 i++;
@@ -95,6 +110,15 @@ public sealed class RNG
             {
                 seed = (((seed * 0x343fd) + 0x269ec3) >> 16) & 0x7fff;
                 State[i] = seed;
+            }
+        }
+        else if (SeedsSigned)
+        {
+            int signedSeed = (int)seed;
+            for (int i = 0; i < 16; i++)
+            {
+                signedSeed = (((signedSeed * 0x343fd) + 0x269ec3) >> 16) & 0x7fffffff;
+                State[i] = (uint)signedSeed;
             }
         }
         else

@@ -13,7 +13,8 @@ public class Program
             Config.Load(PlatformSpecific.GetConfigFileName());
 
             Console.WriteLine("Initializing RNG...");
-            RNG.Initialize(Config.Instance.RNG15Bit, Config.Instance.RNGOldPoly);
+            RNG.Initialize(Config.Instance.RNG15Bit, Config.Instance.RNGOldPoly, 
+                           Config.Instance.RNGSigned);
 
             Dictionary<string, ProgramExecutor> programs = new()
             {
