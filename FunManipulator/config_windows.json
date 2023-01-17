@@ -52,7 +52,7 @@
   "BeepEarlyMs": -16,
   "BeepLateMs": -2,
 
-  "NamingSearchStart": null,
+  "NamingSearchStart": 0,
   "NamingSearchRange": 40000,
 
   "WindowScale": 2,
