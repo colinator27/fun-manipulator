@@ -308,7 +308,7 @@ public static partial class Search
 
         public bool Check(uint[] rng, ref int index)
         {
-            long curr = rng[index++] % (ArgCount + 1);
+            long curr = rng[index++] % ArgCount;
             if (Inverted)
                 return curr < MinInclusive || curr >= MaxExclusive;
             return curr >= MinInclusive && curr < MaxExclusive;
