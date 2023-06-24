@@ -151,6 +151,6 @@ public sealed class RNG
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double NextDouble(double range)
     {
-        return Next() * 2.328306436538696e-10 * range;
+        return Next() * 2.3283064365386963e-10 * range;
     }
 }
