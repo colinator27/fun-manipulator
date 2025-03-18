@@ -11,6 +11,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         configuration: [Release]
         selfcontained: [false, true]
+        singlefile: [false, true]
         include:
           - os: ubuntu-latest
             rid: linux-x64
@@ -29,11 +30,11 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build FunManipulator --no-restore
-    - name: Publish ${{ matrix.os }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
-      run: dotnet publish FunManipulator -c ${{ matrix.configuration }} -r ${{ matrix.rid }} --self-contained ${{ matrix.selfcontained }} -p:PublishSingleFile=true --output app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
+    - name: Publish ${{ matrix.os }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}-singlefile-${{ matrix.singlefile }}
+      run: dotnet publish FunManipulator -c ${{ matrix.configuration }} -r ${{ matrix.rid }} --self-contained ${{ matrix.selfcontained }} -p:PublishSingleFile=${{ matrix.singlefile }} --output app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}-singlefile-${{ matrix.singlefile }}
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: FunManipulator_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
-        path: app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
+        name: FunManipulator_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}-singlefile-${{ matrix.singlefile }}
+        path: app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}-singlefile-${{ matrix.singlefile }}
         
