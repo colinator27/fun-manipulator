@@ -5,29 +5,35 @@ on: [push]
 jobs:
   build:
 
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        configuration: [Release]
+        selfcontained: [false, true]
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup dotnet
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build FunManipulator --no-restore
-    - name: Publish
-      run: dotnet publish FunManipulator -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true --output app_win_x64
+    - name: Publish ${{ matrix.os }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
+      run: dotnet publish FunManipulator -c ${{ matrix.configuration }} -r ${{ matrix.rid }} --self-contained ${{ matrix.selfcontained }} -p:PublishSingleFile=true --output app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: FunManipulator_win_x64
-        path: app_win_x64
-    - name: Publish self-contained
-      run: dotnet publish FunManipulator -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true --output app_win_x64_selfcontained
-    - name: Upload self-contained
-      uses: actions/upload-artifact@v2
-      with:
-        name: FunManipulator_win_x64_selfcontained
-        path: app_win_x64_selfcontained
+        name: FunManipulator_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
+        path: app_${{ matrix.rid }}-${{ matrix.configuration }}-selfcontained-${{ matrix.selfcontained }}
+        
