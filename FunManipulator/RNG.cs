@@ -123,7 +123,9 @@ public sealed class RNG
         }
         else
         {
-            for (int i = 0; i < 16; i++)
+            seed = (uint)(((((int)seed * 0x343fd) + 0x269ec3) >> 16) & 0x7fffffff);
+            State[0] = seed;
+            for (int i = 1; i < 16; i++)
             {
                 seed = ((seed * 0x343fd) + 0x269ec3) >> 16;
                 State[i] = seed;
